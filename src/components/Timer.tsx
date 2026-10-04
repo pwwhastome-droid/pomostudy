@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, Pause, RotateCcw, SkipForward, Volume2, CloudRain, Wind, BellOff } from 'lucide-react';
 import { TimerMode, Subject, Settings } from '../types';
+import { SubjectSelect } from './SubjectSelect';
 
 interface TimerProps {
   mode: TimerMode;
@@ -41,186 +42,231 @@ export const Timer: React.FC<TimerProps> = ({
   const seconds = timeLeft % 60;
   const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-  const progress = totalDuration > 0 ? (1 - timeLeft / totalDuration) * 100 : 0;
-  const radius = 135;
+  const progress = totalDuration > 0 ? (1 - timeLeft / totalDuration) : 0;
+  const radius = 138;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const strokeDashoffset = circumference - progress * circumference;
 
-  const modeColors = {
+  const modeTheme = {
     focus: {
       accent: '#f43f5e',
-      glow: 'shadow-rose-500/20',
-      badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-      button: 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/30',
+      accentSoft: 'rgba(244, 63, 94, 0.25)',
+      gradientFrom: '#fb7185',
+      gradientTo: '#e11d48',
+      tabActive: 'bg-rose-500/15 text-rose-300 border-rose-500/30 shadow-lg shadow-rose-500/10',
+      heroButton: 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white shadow-xl shadow-rose-500/30 border border-rose-400/30',
+      label: 'DEEP WORK',
     },
     shortBreak: {
       accent: '#10b981',
-      glow: 'shadow-emerald-500/20',
-      badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      button: 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30',
+      accentSoft: 'rgba(16, 185, 129, 0.25)',
+      gradientFrom: '#34d399',
+      gradientTo: '#059669',
+      tabActive: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 shadow-lg shadow-emerald-500/10',
+      heroButton: 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-xl shadow-emerald-500/30 border border-emerald-400/30',
+      label: 'SHORT REST',
     },
     longBreak: {
       accent: '#3b82f6',
-      glow: 'shadow-blue-500/20',
-      badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      button: 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/30',
+      accentSoft: 'rgba(59, 130, 246, 0.25)',
+      gradientFrom: '#60a5fa',
+      gradientTo: '#2563eb',
+      tabActive: 'bg-blue-500/15 text-blue-300 border-blue-500/30 shadow-lg shadow-blue-500/10',
+      heroButton: 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white shadow-xl shadow-blue-500/30 border border-blue-400/30',
+      label: 'RECHARGE BREAK',
     },
   }[mode];
 
   const cycleIndex = sessionCount % settings.longBreakInterval;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-md mx-auto">
-      {/* Mode Switcher Tabs */}
-      <div className="flex items-center p-1.5 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800/80 mb-6 gap-1 shadow-inner">
-        <button
-          onClick={() => onSwitchMode('focus')}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            mode === 'focus'
-              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Focus
-        </button>
-        <button
-          onClick={() => onSwitchMode('shortBreak')}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            mode === 'shortBreak'
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Short Break
-        </button>
-        <button
-          onClick={() => onSwitchMode('longBreak')}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            mode === 'longBreak'
-              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Long Break
-        </button>
+    <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto select-none">
+      {/* Dynamic Aura Glow */}
+      <div 
+        className="absolute w-96 h-96 rounded-full blur-[110px] pointer-events-none transition-all duration-1000 opacity-30 -z-10"
+        style={{
+          backgroundColor: modeTheme.accent,
+          transform: isRunning ? 'scale(1.2)' : 'scale(0.9)',
+        }}
+      />
+
+      {/* Pill Switcher */}
+      <div className="flex items-center p-1.5 glass-pill rounded-full mb-6 border border-white/10 shadow-2xl">
+        {(['focus', 'shortBreak', 'longBreak'] as TimerMode[]).map((m) => {
+          const isActive = mode === m;
+          const label = m === 'focus' ? 'Focus' : m === 'shortBreak' ? 'Short Break' : 'Long Break';
+          return (
+            <button
+              key={m}
+              onClick={() => onSwitchMode(m)}
+              className={`px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-300 ${
+                isActive
+                  ? modeTheme.tabActive + ' font-extrabold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Circular Timer Ring */}
-      <div className="relative flex items-center justify-center my-2">
-        <svg className="w-72 h-72 sm:w-80 sm:h-80 -rotate-90 transform drop-shadow-2xl">
-          {/* Background Track */}
+      {/* Modern Circular Dial */}
+      <div className="relative flex items-center justify-center my-1">
+        <svg 
+          className={`w-76 h-76 sm:w-88 sm:h-88 -rotate-90 transform ${isRunning ? 'glow-active' : ''}`}
+          style={{
+            ['--glow-color' as string]: modeTheme.accent,
+            ['--glow-color-soft' as string]: modeTheme.accentSoft,
+          }}
+        >
+          <defs>
+            <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={modeTheme.gradientFrom} />
+              <stop offset="100%" stopColor={modeTheme.gradientTo} />
+            </linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor={modeTheme.accent} floodOpacity="0.5"/>
+            </filter>
+          </defs>
+
+          {/* Ambient Outer Track */}
           <circle
             cx="50%"
             cy="50%"
-            r={radius}
-            className="stroke-slate-800/60"
-            strokeWidth="10"
+            r={radius + 12}
+            className="stroke-slate-800/40"
+            strokeWidth="1"
+            strokeDasharray="4 6"
             fill="transparent"
           />
-          {/* Progress Indicator */}
+
+          {/* Base Track */}
           <circle
             cx="50%"
             cy="50%"
             r={radius}
-            stroke={modeColors.accent}
-            strokeWidth="10"
+            stroke="rgba(255, 255, 255, 0.04)"
+            strokeWidth="12"
+            fill="transparent"
+          />
+
+          {/* Glowing Animated Progress Stroke */}
+          <circle
+            cx="50%"
+            cy="50%"
+            r={radius}
+            stroke="url(#timerGradient)"
+            strokeWidth="12"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
             fill="transparent"
             className="transition-all duration-300 ease-out"
+            filter="url(#shadow)"
           />
         </svg>
 
-        {/* Center Content */}
-        <div className="absolute flex flex-col items-center justify-center text-center">
-          {/* Subject Badge */}
-          {mode === 'focus' && (
-            <div className="mb-2">
-              <select
-                aria-label="Select study subject"
-                value={selectedSubject?.id || ''}
-                onChange={(e) => {
-                  const sub = subjects.find((s) => s.id === e.target.value);
-                  if (sub) onSelectSubject(sub);
-                }}
-                className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700/80 text-slate-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-rose-500/50 appearance-none text-center"
-                style={{
-                  borderColor: selectedSubject ? `${selectedSubject.color}55` : undefined,
-                  boxShadow: selectedSubject ? `0 0 10px ${selectedSubject.color}22` : undefined,
-                }}
-              >
-                {subjects.map((sub) => (
-                  <option key={sub.id} value={sub.id} className="bg-slate-900 text-slate-200">
-                    📖 {sub.name}
-                  </option>
-                ))}
-              </select>
+        {/* Center Display Details */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+          {/* Subject Badge / Selector */}
+          {mode === 'focus' ? (
+            <div className="relative mb-2">
+              <SubjectSelect
+                subjects={subjects}
+                selectedSubject={selectedSubject}
+                onSelect={onSelectSubject}
+                size="md"
+              />
             </div>
+          ) : (
+            <span className="text-[11px] font-bold tracking-widest text-emerald-400 uppercase mb-2 px-3 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              Rest Well
+            </span>
           )}
 
-          {/* Time digits */}
-          <span className="text-6xl sm:text-7xl font-extrabold tracking-tight text-white font-mono drop-shadow-md">
-            {formattedTime}
-          </span>
-
-          {/* Cycle indicators (4 dots) */}
-          <div className="flex items-center gap-1.5 mt-3">
-            {Array.from({ length: settings.longBreakInterval }).map((_, idx) => (
-              <span
-                key={idx}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  idx < cycleIndex
-                    ? 'bg-rose-500 shadow-sm shadow-rose-500/50 scale-110'
-                    : idx === cycleIndex && isRunning && mode === 'focus'
-                    ? 'bg-rose-400 animate-pulse'
-                    : 'bg-slate-800 border border-slate-700/50'
-                }`}
-              />
-            ))}
+          {/* Digits Display */}
+          <div className="flex items-center justify-center">
+            <span className="text-6xl sm:text-7xl font-extrabold tracking-tight text-white font-['JetBrains_Mono',monospace] drop-shadow-2xl">
+              {formattedTime}
+            </span>
           </div>
-          <span className="text-[11px] font-medium text-slate-400 mt-1 uppercase tracking-wider">
-            {mode === 'focus' ? `Pomodoro #${sessionCount + 1}` : 'Rest & Relax'}
-          </span>
+
+          {/* Subtitle / Session Counter */}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {modeTheme.label}
+            </span>
+            <span className="text-slate-600">•</span>
+            <span className="text-[11px] font-semibold text-slate-300">
+              #{sessionCount + 1}
+            </span>
+          </div>
+
+          {/* Cycle Dots */}
+          <div className="flex items-center gap-2 mt-3 p-1.5 px-3 rounded-full bg-slate-950/60 border border-white/5">
+            {Array.from({ length: settings.longBreakInterval }).map((_, idx) => {
+              const isPast = idx < cycleIndex;
+              const isCurrent = idx === cycleIndex && isRunning && mode === 'focus';
+              return (
+                <div
+                  key={idx}
+                  className={`transition-all duration-300 rounded-full ${
+                    isPast
+                      ? 'w-2.5 h-2.5 bg-rose-500 shadow-md shadow-rose-500/50 scale-105'
+                      : isCurrent
+                      ? 'w-2.5 h-2.5 bg-rose-400 animate-pulse'
+                      : 'w-2 h-2 bg-slate-800 border border-slate-700/60'
+                  }`}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Main Action Controls */}
-      <div className="flex items-center gap-4 mt-6">
+      {/* Main Tactile Action Controls */}
+      <div className="flex items-center gap-5 mt-6">
         <button
           onClick={onReset}
-          title="Reset timer"
-          className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition active:scale-95"
+          title="Reset timer (Alt+R)"
+          className="p-4 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all duration-200 active:scale-90 hover:scale-105"
         >
           <RotateCcw className="w-5 h-5" />
         </button>
 
         <button
           onClick={isRunning ? onPause : onStart}
-          className={`flex items-center justify-center w-20 h-16 rounded-2xl ${modeColors.button} transition active:scale-95 font-bold text-lg`}
+          className={`flex items-center justify-center w-24 h-16 rounded-3xl ${modeTheme.heroButton} transition-all duration-200 active:scale-95 hover:scale-105`}
         >
-          {isRunning ? <Pause className="w-7 h-7 fill-current" /> : <Play className="w-7 h-7 fill-current ml-0.5" />}
+          {isRunning ? (
+            <Pause className="w-8 h-8 fill-current drop-shadow-md" />
+          ) : (
+            <Play className="w-8 h-8 fill-current ml-1 drop-shadow-md" />
+          )}
         </button>
 
         <button
           onClick={onSkip}
-          title="Skip to next session"
-          className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition active:scale-95"
+          title="Skip session (Alt+S)"
+          className="p-4 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all duration-200 active:scale-90 hover:scale-105"
         >
           <SkipForward className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Ambient Sound Bar */}
-      <div className="flex items-center gap-2 mt-6 px-3 py-1.5 bg-slate-900/70 border border-slate-800/80 rounded-full text-xs text-slate-400">
-        <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 pl-1">
+      {/* Ambient Sound Audio Pill */}
+      <div className="flex items-center gap-1.5 mt-6 px-4 py-2 glass-pill rounded-full text-xs text-slate-400 shadow-lg">
+        <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400 pr-1">
           <Volume2 className="w-3.5 h-3.5 text-slate-400" />
-          Sound:
+          Ambient:
         </span>
         <button
           onClick={() => onUpdateSettings({ ambientNoise: 'none' })}
-          className={`px-2 py-0.5 rounded-full transition ${
-            settings.ambientNoise === 'none' ? 'bg-slate-800 text-slate-200 font-semibold' : 'hover:text-slate-200'
+          className={`px-3 py-1 rounded-full text-xs transition-all ${
+            settings.ambientNoise === 'none'
+              ? 'bg-slate-800 text-white font-bold shadow-sm'
+              : 'hover:text-slate-200'
           }`}
         >
           <span className="flex items-center gap-1">
@@ -229,8 +275,10 @@ export const Timer: React.FC<TimerProps> = ({
         </button>
         <button
           onClick={() => onUpdateSettings({ ambientNoise: 'rain' })}
-          className={`px-2 py-0.5 rounded-full transition ${
-            settings.ambientNoise === 'rain' ? 'bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30' : 'hover:text-slate-200'
+          className={`px-3 py-1 rounded-full text-xs transition-all ${
+            settings.ambientNoise === 'rain'
+              ? 'bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 shadow-sm'
+              : 'hover:text-slate-200'
           }`}
         >
           <span className="flex items-center gap-1">
@@ -239,8 +287,10 @@ export const Timer: React.FC<TimerProps> = ({
         </button>
         <button
           onClick={() => onUpdateSettings({ ambientNoise: 'white' })}
-          className={`px-2 py-0.5 rounded-full transition ${
-            settings.ambientNoise === 'white' ? 'bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30' : 'hover:text-slate-200'
+          className={`px-3 py-1 rounded-full text-xs transition-all ${
+            settings.ambientNoise === 'white'
+              ? 'bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30 shadow-sm'
+              : 'hover:text-slate-200'
           }`}
         >
           <span className="flex items-center gap-1">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Circle, Plus, Trash2, Clock, Sparkles } from 'lucide-react';
 import { Task, Subject } from '../types';
+import { SubjectSelect } from './SubjectSelect';
 
 interface TaskTrackerProps {
   tasks: Task[];
@@ -50,12 +51,12 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
   const subjectMap = new Map(subjects.map((s) => [s.id, s]));
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 backdrop-blur-md">
-      <div className="flex items-center justify-between mb-4">
+    <div className="glass-panel rounded-3xl p-5 sm:p-6 backdrop-blur-xl">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
             <span>Study Tasks</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/20">
               {tasks.filter((t) => !t.completed).length} pending
             </span>
           </h2>
@@ -63,7 +64,7 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
 
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-semibold border border-rose-500/30 transition"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-500/20 border border-rose-400/20 transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>Add Task</span>
@@ -72,57 +73,51 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
 
       {/* Add Task Form */}
       {isAdding && (
-        <form onSubmit={handleSubmit} className="mb-4 p-3 bg-slate-800/60 rounded-xl border border-slate-700/60 space-y-3">
+        <form onSubmit={handleSubmit} className="mb-5 p-4 rounded-2xl bg-slate-900/80 border border-white/10 space-y-3.5 shadow-xl animate-in fade-in zoom-in-95">
           <input
             type="text"
-            placeholder="e.g. Solve Chapter 4 calculus exercises..."
+            placeholder="e.g. Master dynamic programming memoization..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+            className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
             autoFocus
           />
 
           <div className="flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
-              <span className="text-slate-400">Subject:</span>
-              <select
-                aria-label="Select subject for task"
-                value={selectedSubjectId}
-                onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-slate-200 focus:outline-none flex-1"
-              >
-                {subjects.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.name}
-                  </option>
-                ))}
-              </select>
+            <div className="flex items-center gap-2 flex-1 min-w-[160px]">
+              <span className="text-slate-400 font-medium shrink-0">Subject:</span>
+              <SubjectSelect
+                subjects={subjects}
+                selectedSubject={subjects.find((s) => s.id === selectedSubjectId) || null}
+                onSelect={(sub) => setSelectedSubjectId(sub.id)}
+                size="sm"
+              />
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-400">Est. Pomodoros:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-medium">Est. Pomos:</span>
               <input
                 type="number"
                 min="1"
                 max="20"
                 value={estimatedPomodoros}
                 onChange={(e) => setEstimatedPomodoros(parseInt(e.target.value) || 1)}
-                className="w-14 bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-slate-200 text-center focus:outline-none"
+                className="w-14 bg-slate-950/80 border border-white/10 rounded-lg px-2 py-1 text-slate-200 text-center font-bold focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="flex justify-end gap-2 pt-1 border-t border-white/5">
             <button
               type="button"
               onClick={() => setIsAdding(false)}
-              className="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-3 py-1 rounded-lg text-xs font-semibold bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20"
+              className="px-4 py-1.5 rounded-lg text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/20"
             >
               Save Task
             </button>
@@ -131,37 +126,37 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
       )}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 mb-3 text-xs">
+      <div className="flex items-center gap-1.5 mb-4 p-1 glass-pill rounded-xl w-fit text-xs border border-white/5">
         <button
           onClick={() => setFilter('all')}
-          className={`px-2.5 py-1 rounded-lg transition ${
-            filter === 'all' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:text-slate-300'
+          className={`px-3 py-1 rounded-lg font-bold transition-all ${
+            filter === 'all' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           All ({tasks.length})
         </button>
         <button
           onClick={() => setFilter('active')}
-          className={`px-2.5 py-1 rounded-lg transition ${
-            filter === 'active' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:text-slate-300'
+          className={`px-3 py-1 rounded-lg font-bold transition-all ${
+            filter === 'active' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           Active
         </button>
         <button
           onClick={() => setFilter('completed')}
-          className={`px-2.5 py-1 rounded-lg transition ${
-            filter === 'completed' ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:text-slate-300'
+          className={`px-3 py-1 rounded-lg font-bold transition-all ${
+            filter === 'completed' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          Completed
+          Done
         </button>
       </div>
 
       {/* Task List */}
-      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+      <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-8 text-slate-500 text-sm">
+          <div className="text-center py-10 text-slate-500 text-xs font-medium border border-dashed border-white/10 rounded-2xl">
             No study tasks in this list. Click + Add Task to create one!
           </div>
         ) : (
@@ -172,13 +167,13 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
             return (
               <div
                 key={task.id}
-                className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-200 ${
                   isActive
-                    ? 'bg-rose-500/10 border-rose-500/40 shadow-sm shadow-rose-500/10'
-                    : 'bg-slate-900/50 border-slate-800/70 hover:border-slate-700/80'
+                    ? 'bg-rose-500/10 border-rose-500/40 shadow-lg shadow-rose-500/10'
+                    : 'bg-slate-900/40 border-white/5 hover:border-white/15 hover:bg-slate-900/70'
                 }`}
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                <div className="flex items-center gap-3.5 flex-1 min-w-0 mr-3">
                   <button
                     onClick={() => onToggleComplete(task.id)}
                     className="text-slate-500 hover:text-emerald-400 transition"
@@ -192,32 +187,32 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
 
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-sm font-medium truncate ${
+                      className={`text-sm font-semibold truncate ${
                         task.completed ? 'line-through text-slate-500' : 'text-slate-200'
                       }`}
                     >
                       {task.title}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
                       {subject && (
                         <span
-                          className="inline-flex items-center px-2 py-0.2 rounded-full text-[10px] font-semibold"
+                          className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold"
                           style={{
-                            backgroundColor: `${subject.color}22`,
+                            backgroundColor: `${subject.color}18`,
                             color: subject.color,
-                            borderColor: `${subject.color}44`,
+                            border: `1px solid ${subject.color}35`,
                           }}
                         >
                           {subject.name}
                         </span>
                       )}
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        {task.completedPomodoros}/{task.estimatedPomodoros} pomos
+                      <span className="flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+                        <Clock className="w-3 h-3 text-slate-500" />
+                        {task.completedPomodoros}/{task.estimatedPomodoros}
                         <button
                           onClick={() => onIncrementPomo(task.id)}
                           title="Manually log 1 pomodoro"
-                          className="ml-1 text-[10px] px-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                          className="ml-1 text-[10px] px-1.5 py-0.2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-sans font-bold"
                         >
                           +1
                         </button>
@@ -226,18 +221,18 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   {!task.completed && (
                     <button
                       onClick={() => onSelectTask(task.id)}
                       title={isActive ? 'Active Task' : 'Focus on this task'}
-                      className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all ${
                         isActive
-                          ? 'bg-rose-500 text-white'
+                          ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
                           : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                       }`}
                     >
-                      {isActive ? <Sparkles className="w-3 h-3" /> : null}
+                      {isActive ? <Sparkles className="w-3.5 h-3.5" /> : null}
                       {isActive ? 'Active' : 'Focus'}
                     </button>
                   )}
@@ -245,7 +240,7 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
                   <button
                     onClick={() => onDeleteTask(task.id)}
                     title="Delete task"
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                    className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

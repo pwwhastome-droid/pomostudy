@@ -97,7 +97,6 @@ export const App: React.FC = () => {
   // Desktop keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
         return;
       }
@@ -223,30 +222,30 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0f172a] via-[#090d16] to-[#04060a] text-slate-100 flex flex-col justify-between">
-      {/* Top Header */}
-      <header className="w-full border-b border-slate-800/80 bg-slate-950/40 backdrop-blur-xl sticky top-0 z-30 px-4 py-3 sm:px-6">
+    <div className="min-h-screen bg-mesh-dark text-slate-100 flex flex-col justify-between relative selection:bg-rose-500/30 selection:text-rose-200">
+      {/* Top Floating Glass Header */}
+      <header className="w-full border-b border-white/5 bg-slate-950/60 backdrop-blur-2xl sticky top-0 z-30 px-4 py-3.5 sm:px-8">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-500/25">
-              <span className="text-white font-black text-sm">P</span>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-rose-500 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-500/25 border border-rose-400/30">
+              <span className="text-white font-black text-sm tracking-tight">P</span>
             </div>
             <div>
-              <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
+              <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
                 PomoStudy
-                <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/20">
-                  PRO
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-bold border border-rose-500/20 uppercase tracking-widest">
+                  Focus
                 </span>
               </h1>
             </div>
           </div>
 
-          {/* Navigation Bar (Desktop & Tablet) */}
-          <nav className="hidden sm:flex items-center gap-1 bg-slate-900/80 p-1 rounded-2xl border border-slate-800">
+          {/* Desktop Navigation */}
+          <nav className="hidden sm:flex items-center gap-1.5 glass-pill p-1 rounded-2xl border border-white/10">
             <button
               onClick={() => setActiveTab('timer')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                activeTab === 'timer' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'timer' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <TimerIcon className="w-4 h-4" />
@@ -254,8 +253,8 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('tasks')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                activeTab === 'tasks' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'tasks' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <CheckSquare className="w-4 h-4" />
@@ -263,8 +262,8 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                activeTab === 'analytics' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'analytics' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <BarChart3 className="w-4 h-4" />
@@ -272,8 +271,8 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('subjects')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                activeTab === 'subjects' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'subjects' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -281,19 +280,19 @@ export const App: React.FC = () => {
             </button>
           </nav>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-1.5">
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMiniMode(!isMiniMode)}
               title="Mini Floating Mode (Alt+M)"
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
+              className="p-2.5 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
             >
               <Minimize2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setIsSettingsOpen(true)}
               title="Settings"
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition"
+              className="p-2.5 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
             >
               <SettingsIcon className="w-4 h-4" />
             </button>
@@ -301,8 +300,8 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 pb-24 sm:pb-8 flex flex-col justify-center">
+      {/* Main Responsive Canvas */}
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 pb-28 sm:pb-12 flex flex-col justify-center">
         {activeTab === 'timer' && (
           <div className="space-y-6">
             <Timer
@@ -325,16 +324,16 @@ export const App: React.FC = () => {
 
             {/* Quick Active Task Banner if selected */}
             {activeTaskId && (
-              <div className="max-w-md mx-auto w-full p-3 bg-slate-900/60 border border-slate-800/80 rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs truncate mr-2">
-                  <span className="text-slate-400 font-semibold">Active Goal:</span>
-                  <span className="text-slate-200 truncate font-medium">
+              <div className="max-w-md mx-auto w-full p-3.5 glass-panel rounded-2xl flex items-center justify-between border-rose-500/20 animate-in fade-in">
+                <div className="flex items-center gap-2.5 text-xs truncate mr-2">
+                  <span className="text-rose-400 font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-rose-500/10">Active Goal</span>
+                  <span className="text-slate-100 truncate font-semibold">
                     {tasks.find((t) => t.id === activeTaskId)?.title}
                   </span>
                 </div>
                 <button
                   onClick={() => setActiveTaskId(undefined)}
-                  className="text-[11px] text-slate-500 hover:text-slate-300"
+                  className="text-xs text-slate-400 hover:text-white font-medium px-2 py-1 rounded-lg hover:bg-slate-800 transition"
                 >
                   Clear
                 </button>
@@ -406,12 +405,12 @@ export const App: React.FC = () => {
         onImportData={handleImportData}
       />
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800/80 px-2 py-1.5 flex items-center justify-around">
+      {/* Mobile Floating Bottom Bar */}
+      <div className="sm:hidden fixed bottom-4 left-4 right-4 z-30 glass-panel rounded-3xl p-1.5 flex items-center justify-around border-white/10 shadow-2xl">
         <button
           onClick={() => setActiveTab('timer')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition ${
-            activeTab === 'timer' ? 'text-rose-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
+            activeTab === 'timer' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
           }`}
         >
           <TimerIcon className="w-5 h-5" />
@@ -419,8 +418,8 @@ export const App: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition ${
-            activeTab === 'tasks' ? 'text-rose-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
+            activeTab === 'tasks' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
           }`}
         >
           <CheckSquare className="w-5 h-5" />
@@ -428,8 +427,8 @@ export const App: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition ${
-            activeTab === 'analytics' ? 'text-rose-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
+            activeTab === 'analytics' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
           }`}
         >
           <BarChart3 className="w-5 h-5" />
@@ -437,8 +436,8 @@ export const App: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('subjects')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition ${
-            activeTab === 'subjects' ? 'text-rose-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
+            activeTab === 'subjects' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
           }`}
         >
           <BookOpen className="w-5 h-5" />

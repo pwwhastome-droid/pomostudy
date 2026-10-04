@@ -79,89 +79,97 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
 
   return (
     <div className="space-y-4">
-      {/* Top Metric Cards */}
+      {/* Top Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3.5 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-rose-400 text-xs font-semibold mb-1">
-            <Clock className="w-4 h-4" />
+        <div className="glass-panel rounded-2xl p-4 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all pointer-events-none" />
+          <div className="flex items-center gap-1.5 text-rose-400 text-xs font-bold mb-1.5 uppercase tracking-wider">
+            <Clock className="w-3.5 h-3.5" />
             <span>Today</span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">
-            {todayFocusMinutes} <span className="text-xs text-slate-400 font-normal">min</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+            {todayFocusMinutes}<span className="text-xs text-slate-400 font-sans ml-1 font-normal">m</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            Goal: {settings.dailyGoalMinutes} min ({goalProgress}%)
+          <div className="text-[11px] text-slate-400 mt-1.5 font-medium flex items-center justify-between">
+            <span>Goal: {settings.dailyGoalMinutes}m</span>
+            <span className="text-rose-400 font-bold">{goalProgress}%</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3.5 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold mb-1">
-            <Flame className="w-4 h-4" />
+        <div className="glass-panel rounded-2xl p-4 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all pointer-events-none" />
+          <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold mb-1.5 uppercase tracking-wider">
+            <Flame className="w-3.5 h-3.5" />
             <span>Streak</span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">
-            {streak} <span className="text-xs text-slate-400 font-normal">days</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+            {streak}<span className="text-xs text-slate-400 font-sans ml-1 font-normal">days</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            {streak > 0 ? '🔥 On fire!' : 'Start studying today'}
+          <div className="text-[11px] text-slate-400 mt-1.5 font-medium">
+            {streak > 0 ? '🔥 Habit locked' : 'Start streak today'}
           </div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3.5 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold mb-1">
-            <Award className="w-4 h-4" />
+        <div className="glass-panel rounded-2xl p-4 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all pointer-events-none" />
+          <div className="flex items-center gap-1.5 text-blue-400 text-xs font-bold mb-1.5 uppercase tracking-wider">
+            <Award className="w-3.5 h-3.5" />
             <span>Total Hours</span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">
-            {allTimeHours} <span className="text-xs text-slate-400 font-normal">hrs</span>
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
+            {allTimeHours}<span className="text-xs text-slate-400 font-sans ml-1 font-normal">hrs</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">
+          <div className="text-[11px] text-slate-400 mt-1.5 font-medium">
             {focusSessions.length} total sessions
           </div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3.5 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold mb-1">
-            <Calendar className="w-4 h-4" />
+        <div className="glass-panel rounded-2xl p-4 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
+          <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold mb-1.5 uppercase tracking-wider">
+            <Calendar className="w-3.5 h-3.5" />
             <span>Pomos Today</span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
             {focusSessions.filter((s) => s.timestamp.startsWith(todayStr)).length}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">Sessions completed</div>
+          <div className="text-[11px] text-slate-400 mt-1.5 font-medium">Sessions done</div>
         </div>
       </div>
 
       {/* 7-Day Chart */}
-      <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 backdrop-blur-md">
-        <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2 mb-4">
-          <BarChart3 className="w-4 h-4 text-rose-400" />
-          <span>Last 7 Days Study Time</span>
-        </h3>
+      <div className="glass-panel rounded-3xl p-5 sm:p-6 backdrop-blur-xl">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-rose-400" />
+            <span>Weekly Study Performance</span>
+          </h3>
+          <span className="text-xs text-slate-400 font-medium">Last 7 Days</span>
+        </div>
 
-        <div className="flex items-end justify-between gap-2 h-36 pt-4">
+        <div className="flex items-end justify-between gap-3 h-40 pt-4">
           {last7Days.map((day) => {
             const heightPercent = Math.max(6, (day.minutes / maxDayMinutes) * 100);
             const isToday = day.date === todayStr;
 
             return (
-              <div key={day.date} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                <span className="text-[10px] text-slate-400 font-mono">
+              <div key={day.date} className="flex-1 flex flex-col items-center gap-2.5 h-full justify-end group">
+                <span className="text-[10px] text-slate-400 font-mono font-semibold transition-opacity opacity-70 group-hover:opacity-100">
                   {day.minutes > 0 ? `${day.minutes}m` : ''}
                 </span>
-                <div className="w-full max-w-[28px] bg-slate-800 rounded-t-lg relative flex items-end overflow-hidden h-full">
+                <div className="w-full max-w-[34px] bg-slate-900/80 rounded-t-xl relative flex items-end overflow-hidden h-full border border-white/5">
                   <div
-                    className={`w-full rounded-t-lg transition-all duration-500 ${
+                    className={`w-full rounded-t-xl transition-all duration-700 ${
                       isToday
-                        ? 'bg-gradient-to-t from-rose-600 to-rose-400 shadow-lg shadow-rose-500/20'
-                        : 'bg-gradient-to-t from-slate-700 to-slate-500'
+                        ? 'bg-gradient-to-t from-rose-600 via-rose-500 to-rose-400 shadow-lg shadow-rose-500/30'
+                        : 'bg-gradient-to-t from-slate-700 to-slate-500 group-hover:from-slate-600 group-hover:to-slate-400'
                     }`}
                     style={{ height: `${heightPercent}%` }}
                   />
                 </div>
                 <span
-                  className={`text-[11px] font-medium ${
-                    isToday ? 'text-rose-400 font-bold' : 'text-slate-400'
+                  className={`text-[11px] font-bold ${
+                    isToday ? 'text-rose-400 font-extrabold' : 'text-slate-400'
                   }`}
                 >
                   {day.label}
@@ -174,26 +182,27 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
 
       {/* Subject Distribution */}
       {subjectDistribution.length > 0 && (
-        <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 backdrop-blur-md">
-          <h3 className="text-sm font-bold text-slate-200 mb-3">Time by Subject</h3>
-          <div className="space-y-2.5">
+        <div className="glass-panel rounded-3xl p-5 sm:p-6 backdrop-blur-xl">
+          <h3 className="text-sm font-bold text-slate-100 mb-4">Subject Time Distribution</h3>
+          <div className="space-y-3">
             {subjectDistribution.map((sub) => (
-              <div key={sub.id} className="space-y-1">
+              <div key={sub.id} className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5 font-medium text-slate-200">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sub.color }} />
+                  <span className="flex items-center gap-2 font-semibold text-slate-200">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sub.color, boxShadow: `0 0 8px ${sub.color}88` }} />
                     {sub.name}
                   </span>
-                  <span className="text-slate-400">
-                    {sub.minutes}m ({sub.percentage.toFixed(0)}%)
+                  <span className="text-slate-400 font-mono">
+                    <strong className="text-white font-sans">{sub.minutes}m</strong> ({sub.percentage.toFixed(0)}%)
                   </span>
                 </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden border border-white/5">
                   <div
-                    className="h-full rounded-full transition-all duration-500"
+                    className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${sub.percentage}%`,
                       backgroundColor: sub.color,
+                      boxShadow: `0 0 10px ${sub.color}66`,
                     }}
                   />
                 </div>
@@ -204,12 +213,12 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
       )}
 
       {/* Recent Activity Log */}
-      <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 backdrop-blur-md">
-        <h3 className="text-sm font-bold text-slate-200 mb-3">Recent Completed Sessions</h3>
+      <div className="glass-panel rounded-3xl p-5 sm:p-6 backdrop-blur-xl">
+        <h3 className="text-sm font-bold text-slate-100 mb-3.5">Recent Activity Logs</h3>
         {sessions.length === 0 ? (
-          <p className="text-xs text-slate-500 text-center py-4">No sessions recorded yet.</p>
+          <p className="text-xs text-slate-500 text-center py-6">No sessions recorded yet.</p>
         ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
             {sessions.slice(0, 10).map((s) => {
               const sub = s.subjectId ? subjectMap.get(s.subjectId) : undefined;
               const date = new Date(s.timestamp);
@@ -219,28 +228,28 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
               return (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-900/40 border border-slate-800/50"
+                  className="flex items-center justify-between text-xs p-3 rounded-xl bg-slate-900/40 border border-white/5 hover:border-white/10 transition"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        s.mode === 'focus' ? 'bg-rose-500' : 'bg-emerald-500'
+                        s.mode === 'focus' ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-emerald-500 shadow-sm shadow-emerald-500/50'
                       }`}
                     />
-                    <span className="font-medium text-slate-200">
-                      {s.mode === 'focus' ? 'Focus Session' : 'Break'}
+                    <span className="font-semibold text-slate-200">
+                      {s.mode === 'focus' ? 'Deep Work' : 'Break'}
                     </span>
                     {sub && (
                       <span
-                        className="px-1.5 py-0.5 rounded text-[10px] font-semibold"
-                        style={{ backgroundColor: `${sub.color}22`, color: sub.color }}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-bold"
+                        style={{ backgroundColor: `${sub.color}15`, color: sub.color, border: `1px solid ${sub.color}30` }}
                       >
                         {sub.name}
                       </span>
                     )}
                   </div>
-                  <div className="text-slate-400">
-                    <span className="font-semibold text-slate-300">{s.durationMinutes}m</span> •{' '}
+                  <div className="text-slate-400 font-mono text-[11px]">
+                    <span className="font-bold text-slate-200 font-sans">{s.durationMinutes}m</span> •{' '}
                     <span>
                       {dateFormatted} {timeFormatted}
                     </span>
