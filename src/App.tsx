@@ -8,6 +8,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { MiniTimer } from './components/MiniTimer';
 import { useTimer } from './hooks/useTimer';
 import { useWakeLock } from './hooks/useWakeLock';
+import { useMediaSession } from './hooks/useMediaSession';
+import { usePictureInPicture } from './hooks/usePictureInPicture';
 import { storage } from './utils/storage';
 import { Settings, Subject, Task, SessionRecord, TimerMode } from './types';
 import {
@@ -17,6 +19,7 @@ import {
   BookOpen,
   Settings as SettingsIcon,
   Minimize2,
+  ExternalLink,
 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -93,6 +96,21 @@ export const App: React.FC = () => {
 
   // Keep screen awake on Android / Desktop when timer is running
   useWakeLock(settings.wakeLockEnabled, timer.isRunning);
+
+  // System Media Controls & Android Lock Screen presence
+  useMediaSession({
+    mode: timer.mode,
+    timeLeft: timer.timeLeft,
+    totalDuration: timer.totalDuration,
+    isRunning: timer.isRunning,
+    subjectName: selectedSubject?.name,
+    onPlay: timer.start,
+    onPause: timer.pause,
+    onSkip: timer.skip,
+  });
+
+  // Document Picture-in-Picture for native floating window
+  const pip = usePictureInPicture({ containerId: 'pip-timer-wrapper' });
 
   // Desktop keyboard shortcuts
   useEffect(() => {
@@ -282,6 +300,19 @@ export const App: React.FC = () => {
 
           {/* Quick Actions */}
           <div className="flex items-center gap-2">
+            {pip.isSupported && (
+              <button
+                onClick={pip.togglePip}
+                title={pip.isPipOpen ? 'Close Floating Window' : 'Pop out floating window (Picture-in-Picture)'}
+                className={`p-2.5 rounded-2xl glass-panel transition-all active:scale-95 ${
+                  pip.isPipOpen
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                    : 'text-slate-400 hover:text-white hover:border-white/20'
+                }`}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={() => setIsMiniMode(!isMiniMode)}
               title="Mini Floating Mode (Alt+M)"
@@ -304,23 +335,27 @@ export const App: React.FC = () => {
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 pb-28 sm:pb-12 flex flex-col justify-center">
         {activeTab === 'timer' && (
           <div className="space-y-6">
-            <Timer
-              mode={timer.mode}
-              timeLeft={timer.timeLeft}
-              totalDuration={timer.totalDuration}
-              isRunning={timer.isRunning}
-              sessionCount={timer.sessionCount}
-              selectedSubject={selectedSubject}
-              subjects={subjects}
-              settings={settings}
-              onSelectSubject={setSelectedSubject}
-              onStart={timer.start}
-              onPause={timer.pause}
-              onReset={timer.reset}
-              onSkip={timer.skip}
-              onSwitchMode={timer.switchMode}
-              onUpdateSettings={handleUpdateSettings}
-            />
+            <div id="pip-original-host">
+              <div id="pip-timer-wrapper">
+                <Timer
+                  mode={timer.mode}
+                  timeLeft={timer.timeLeft}
+                  totalDuration={timer.totalDuration}
+                  isRunning={timer.isRunning}
+                  sessionCount={timer.sessionCount}
+                  selectedSubject={selectedSubject}
+                  subjects={subjects}
+                  settings={settings}
+                  onSelectSubject={setSelectedSubject}
+                  onStart={timer.start}
+                  onPause={timer.pause}
+                  onReset={timer.reset}
+                  onSkip={timer.skip}
+                  onSwitchMode={timer.switchMode}
+                  onUpdateSettings={handleUpdateSettings}
+                />
+              </div>
+            </div>
 
             {/* Quick Active Task Banner if selected */}
             {activeTaskId && (

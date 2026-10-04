@@ -17,13 +17,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: |
+          npm --no-audit --no-fund install
 
       - name: Build Web Dist
-        run: npm run build
+        run: |
+          npm run build
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
@@ -34,18 +35,20 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Capacitor Android & Sync
+      - name: Add Capacitor Android Platform
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install --save @capacitor/core @capacitor/cli @capacitor/android
           npx cap add android || true
           npx cap sync android
 
       - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PomoStudy-Android-Debug
+          name: PomoStudy-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk

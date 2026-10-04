@@ -47,19 +47,77 @@ export function useTimer({ settings, onSessionComplete }: UseTimerProps) {
     }
   }, []);
 
-  const sendNotification = useCallback((title: string, body: string) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(title, {
-          body,
-          icon: '/pomo-icon.svg',
-          badge: '/pomo-icon.svg',
-        });
-      } catch {
-        // Ignore notification errors in non-standard environments
+  // Send interactive system notifications with actions
+  const sendInteractiveNotification = useCallback(
+    (title: string, body: string, isFocusComplete: boolean) => {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      const actions = isFocusComplete
+        ? [
+            { action: 'start_break', title: '☕ Take Break' },
+            { action: 'skip_break', title: '⚡ Skip to Next' },
+          ]
+        : [
+            { action: 'start_focus', title: '🎯 Start Focus' },
+            { action: 'postpone', title: '⏳ 5m More' },
+          ];
+
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready
+          .then((registration) => {
+            registration.showNotification(title, {
+              body,
+              icon: '/pomo-icon.svg',
+              badge: '/pomo-icon.svg',
+              vibrate: [200, 100, 200],
+              tag: 'pomostudy-timer',
+              renotify: true,
+              actions,
+            } as NotificationOptions);
+          })
+          .catch(() => {
+            new Notification(title, { body, icon: '/pomo-icon.svg' });
+          });
+      } else {
+        new Notification(title, { body, icon: '/pomo-icon.svg' });
       }
+    },
+    []
+  );
+
+  const start = useCallback(() => {
+    endTimeRef.current = Date.now() + timeLeft * 1000;
+    setIsRunning(true);
+  }, [timeLeft]);
+
+  const pause = useCallback(() => {
+    if (endTimeRef.current) {
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      endTimeRef.current = null;
     }
+    setIsRunning(false);
   }, []);
+
+  const reset = useCallback(() => {
+    setIsRunning(false);
+    endTimeRef.current = null;
+    const dur = getDurationForMode(mode);
+    setTimeLeft(dur);
+    setTotalDuration(dur);
+  }, [getDurationForMode, mode]);
+
+  const switchMode = useCallback(
+    (newMode: TimerMode) => {
+      setIsRunning(false);
+      endTimeRef.current = null;
+      setMode(newMode);
+      const dur = getDurationForMode(newMode);
+      setTimeLeft(dur);
+      setTotalDuration(dur);
+    },
+    [getDurationForMode]
+  );
 
   const handleComplete = useCallback(() => {
     setIsRunning(false);
@@ -84,9 +142,10 @@ export function useTimer({ settings, onSessionComplete }: UseTimerProps) {
       const nextMode: TimerMode = isLong ? 'longBreak' : 'shortBreak';
       const nextDur = getDurationForMode(nextMode);
 
-      sendNotification(
+      sendInteractiveNotification(
         'Focus Session Complete! 🎉',
-        isLong ? 'Great job! Time for a well-deserved long break.' : 'Time for a quick recharge break.'
+        isLong ? 'Great job! Time for a well-deserved long break.' : 'Time for a quick recharge break.',
+        true
       );
 
       setMode(nextMode);
@@ -101,7 +160,7 @@ export function useTimer({ settings, onSessionComplete }: UseTimerProps) {
       }
     } else {
       // Break finished
-      sendNotification('Break Finished! ⚡', 'Ready to dive back into your studies?');
+      sendInteractiveNotification('Break Finished! ⚡', 'Ready to dive back into your studies?', false);
       const focusDur = getDurationForMode('focus');
       setMode('focus');
       setTimeLeft(focusDur);
@@ -114,7 +173,36 @@ export function useTimer({ settings, onSessionComplete }: UseTimerProps) {
         }, 500);
       }
     }
-  }, [mode, totalDuration, settings, onSessionComplete, sessionCount, getDurationForMode, sendNotification]);
+  }, [mode, totalDuration, settings, onSessionComplete, sessionCount, getDurationForMode, sendInteractiveNotification]);
+
+  const skip = useCallback(() => {
+    handleComplete();
+  }, [handleComplete]);
+
+  // Listen for actions from interactive notifications
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'NOTIFICATION_ACTION') {
+        const action = event.data.action;
+        if (action === 'start_break' || action === 'start_focus') {
+          start();
+        } else if (action === 'skip_break') {
+          skip();
+        } else if (action === 'postpone') {
+          setTimeLeft((prev) => prev + 300);
+          setTotalDuration((prev) => prev + 300);
+          start();
+        }
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleMessage);
+    };
+  }, [start, skip]);
 
   // Main countdown loop with drift correction
   useEffect(() => {
@@ -154,41 +242,6 @@ export function useTimer({ settings, onSessionComplete }: UseTimerProps) {
       soundEngine.setAmbientNoise('none');
     };
   }, [isRunning, mode, settings.ambientNoise, settings.volume]);
-
-  const start = () => {
-    endTimeRef.current = Date.now() + timeLeft * 1000;
-    setIsRunning(true);
-  };
-
-  const pause = () => {
-    if (endTimeRef.current) {
-      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
-      setTimeLeft(remaining);
-      endTimeRef.current = null;
-    }
-    setIsRunning(false);
-  };
-
-  const reset = () => {
-    setIsRunning(false);
-    endTimeRef.current = null;
-    const dur = getDurationForMode(mode);
-    setTimeLeft(dur);
-    setTotalDuration(dur);
-  };
-
-  const switchMode = (newMode: TimerMode) => {
-    setIsRunning(false);
-    endTimeRef.current = null;
-    setMode(newMode);
-    const dur = getDurationForMode(newMode);
-    setTimeLeft(dur);
-    setTotalDuration(dur);
-  };
-
-  const skip = () => {
-    handleComplete();
-  };
 
   return {
     mode,
