@@ -441,42 +441,50 @@ export const App: React.FC = () => {
       />
 
       {/* Mobile Floating Bottom Bar */}
-      <div className="sm:hidden fixed bottom-4 left-4 right-4 z-30 glass-panel rounded-3xl p-1.5 flex items-center justify-around border-white/10 shadow-2xl">
+      <div className="sm:hidden fixed bottom-4 left-4 right-4 z-30 glass-panel rounded-3xl p-2 flex items-center justify-around border-white/10 shadow-2xl backdrop-blur-2xl">
         <button
           onClick={() => setActiveTab('timer')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
-            activeTab === 'timer' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+            activeTab === 'timer'
+              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <TimerIcon className="w-5 h-5" />
-          <span className="text-[10px]">Timer</span>
+          <span className="text-[10px] tracking-wider font-semibold">Timer</span>
         </button>
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
-            activeTab === 'tasks' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+            activeTab === 'tasks'
+              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <CheckSquare className="w-5 h-5" />
-          <span className="text-[10px]">Tasks</span>
+          <span className="text-[10px] tracking-wider font-semibold">Tasks</span>
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
-            activeTab === 'analytics' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+            activeTab === 'analytics'
+              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <BarChart3 className="w-5 h-5" />
-          <span className="text-[10px]">Stats</span>
+          <span className="text-[10px] tracking-wider font-semibold">Stats</span>
         </button>
         <button
           onClick={() => setActiveTab('subjects')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-4 rounded-2xl transition-all ${
-            activeTab === 'subjects' ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-sm' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+            activeTab === 'subjects'
+              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <BookOpen className="w-5 h-5" />
-          <span className="text-[10px]">Subjects</span>
+          <span className="text-[10px] tracking-wider font-semibold">Subjects</span>
         </button>
       </div>
     </div>
