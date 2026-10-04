@@ -1,0 +1,12 @@
+{
+  "appId": "com.pomostudy.app",
+  "appName": "PomoStudy",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#090d16",
+    "allowMixedContent": true
+  }
+}
