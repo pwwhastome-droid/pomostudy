@@ -245,9 +245,11 @@ export const App: React.FC = () => {
       <header className="w-full border-b border-white/5 bg-slate-950/60 backdrop-blur-2xl sticky top-0 z-30 px-4 py-3.5 sm:px-8">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-rose-500 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-500/25 border border-rose-400/30">
-              <span className="text-white font-black text-sm tracking-tight">P</span>
-            </div>
+            <img
+              src="/pomo-icon.png"
+              alt="PomoStudy"
+              className="w-9 h-9 rounded-2xl shadow-lg shadow-rose-500/15 border border-white/10 object-cover"
+            />
             <div>
               <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
                 PomoStudy
