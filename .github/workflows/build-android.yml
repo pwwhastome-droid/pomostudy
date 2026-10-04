@@ -40,7 +40,6 @@ jobs:
 
       - name: Inject Custom Android Launcher Icons
         run: |
-          # Copy custom generated launcher icons into Android resource directories
           for dir in android-res/mipmap-*; do
             folder=$(basename "$dir")
             target="android/app/src/main/res/$folder"
@@ -49,18 +48,23 @@ jobs:
             fi
           done
 
+      - name: Configure Permanent Release Keystore
+        run: |
+          keytool -genkey -v -keystore android/app/release.jks -alias pomostudy -keyalg RSA -keysize 2048 -validity 10000 -storepass "pomostudy2026" -keypass "pomostudy2026" -dname "CN=PomoStudy, OU=Mobile, O=PomoStudy, L=SanFrancisco, ST=CA, C=US"
+          python3 configure_signing.py
+
       - name: Resolve Kotlin Stdlib Duplicate Classes
         run: |
           sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22") { because("kotlin-stdlib-jdk7 is now part of kotlin-stdlib") }\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22") { because("kotlin-stdlib-jdk8 is now part of kotlin-stdlib") }\n    }' android/app/build.gradle
 
-      - name: Build Debug APK
+      - name: Build Release APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: PomoStudy-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
