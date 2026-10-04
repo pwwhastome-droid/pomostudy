@@ -32,9 +32,6 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Add Capacitor Android Platform
         run: |
           npm install --save @capacitor/core @capacitor/cli @capacitor/android
