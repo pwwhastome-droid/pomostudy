@@ -2,60 +2,54 @@
   <defs>
     <!-- Background Gradient -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#020617" />
+      <stop offset="0%" stop-color="#0b0f1a" />
+      <stop offset="100%" stop-color="#030712" />
     </linearGradient>
 
-    <!-- Tomato 3D Sphere Radial Gradient -->
-    <radialGradient id="tomatoSphere" cx="38%" cy="36%" r="65%">
-      <stop offset="0%" stop-color="#fda4af" />
-      <stop offset="25%" stop-color="#fb7185" />
-      <stop offset="55%" stop-color="#f43f5e" />
-      <stop offset="85%" stop-color="#be123c" />
-      <stop offset="100%" stop-color="#881337" />
-    </radialGradient>
-
-    <!-- Ambient Shadow/Glow -->
-    <filter id="ambientGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="22" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
+    <!-- Arc Gradient -->
+    <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff5376" />
+      <stop offset="100%" stop-color="#e11d48" />
+    </linearGradient>
 
     <!-- Leaf Gradient -->
     <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#34d399" />
       <stop offset="100%" stop-color="#059669" />
     </linearGradient>
+
+    <!-- Soft Core Glow -->
+    <filter id="coreGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
   </defs>
 
   <!-- Dark Rounded Tile (Squircle) -->
-  <rect x="20" y="20" width="472" height="472" rx="112" fill="url(#bgGrad)" stroke="#ffffff" stroke-opacity="0.12" stroke-width="4" />
+  <rect x="20" y="20" width="472" height="472" rx="116" fill="url(#bgGrad)" stroke="#ffffff" stroke-opacity="0.10" stroke-width="4" />
 
   <!-- Ambient Glow -->
-  <circle cx="256" cy="285" r="160" fill="#f43f5e" fill-opacity="0.32" filter="url(#ambientGlow)" />
+  <circle cx="256" cy="266" r="170" fill="#f43f5e" fill-opacity="0.28" filter="url(#coreGlow)" />
 
-  <!-- Tomato Main Body -->
-  <circle cx="256" cy="285" r="145" fill="url(#tomatoSphere)" />
+  <!-- Outer Track Ring (Subtle Base) -->
+  <circle cx="256" cy="266" r="152" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="26" />
 
-  <!-- Dial Track (Focus Arc) -->
-  <circle cx="256" cy="285" r="88" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="9" stroke-linecap="round" stroke-dasharray="415 150" />
+  <!-- Main Focus Arc (Bold Glowing 270-degree Stroke) -->
+  <circle cx="256" cy="266" r="152" fill="none" stroke="url(#arcGrad)" stroke-width="26" stroke-linecap="round" stroke-dasharray="715 250" transform="rotate(-90 256 266)" />
 
-  <!-- Center Pin & Hands -->
-  <circle cx="256" cy="285" r="12" fill="#ffffff" />
-  <circle cx="256" cy="285" r="5" fill="#e11d48" />
+  <!-- Organic Emerald Leaf Accent -->
+  <g transform="translate(348, 125) rotate(42)">
+    <rect x="-18" y="-42" width="36" height="84" rx="18" fill="url(#leafGrad)" />
+    <rect x="-8" y="-22" width="16" height="44" rx="8" fill="#a7f3d0" />
+  </g>
 
-  <!-- Minute Hand (Pointing ~2 o'clock) -->
-  <line x1="256" y1="285" x2="315" y2="238" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
-  <!-- Hour Hand (Pointing ~10 o'clock) -->
-  <line x1="256" y1="285" x2="216" y2="248" stroke="#ffffff" stroke-width="9" stroke-linecap="round" />
+  <!-- Center Hub -->
+  <circle cx="256" cy="266" r="28" fill="#ffffff" />
+  <circle cx="256" cy="266" r="12" fill="#0b0f1a" />
 
-  <!-- Stem & Calyx Leaves -->
-  <!-- Left Leaf -->
-  <path d="M 256 142 C 205 130 165 145 155 152 C 175 168 220 162 256 148 Z" fill="#059669" />
-  <!-- Right Leaf -->
-  <path d="M 256 142 C 295 110 345 116 360 125 C 342 148 298 155 256 148 Z" fill="url(#leafGrad)" />
-  <!-- Curved Stem -->
-  <path d="M 256 144 C 252 118 266 98 288 88" fill="none" stroke="#10b981" stroke-width="11" stroke-linecap="round" />
-  <!-- Calyx Cap -->
-  <circle cx="256" cy="144" r="12" fill="#047857" />
+  <!-- Precision Clock Hands -->
+  <!-- Minute Hand (2 o'clock / forward tilt) -->
+  <line x1="256" y1="266" x2="336" y2="204" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
+  <!-- Hour Hand (12 o'clock) -->
+  <line x1="256" y1="266" x2="256" y2="196" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
 </svg>
