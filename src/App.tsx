@@ -6,6 +6,7 @@ import { Analytics } from './components/Analytics';
 import { SubjectManager } from './components/SubjectManager';
 import { ExamCalendar } from './components/ExamCalendar';
 import { ClassReminderManager } from './components/ClassReminderManager';
+import { SpacedRepetition } from './components/SpacedRepetition';
 import { SettingsModal } from './components/SettingsModal';
 import { MiniTimer } from './components/MiniTimer';
 import { useTimer } from './hooks/useTimer';
@@ -14,7 +15,7 @@ import { useMediaSession } from './hooks/useMediaSession';
 import { usePictureInPicture } from './hooks/usePictureInPicture';
 import { useScheduleReminders } from './hooks/useScheduleReminders';
 import { storage } from './utils/storage';
-import { Settings, Subject, Task, SessionRecord, TimerMode, ClassSchedule, ExamEvent } from './types';
+import { Settings, Subject, Task, SessionRecord, TimerMode, ClassSchedule, ExamEvent, SpacedItem } from './types';
 import {
   Timer as TimerIcon,
   CheckSquare,
@@ -22,6 +23,7 @@ import {
   BookOpen,
   Calendar as CalendarIcon,
   Bell,
+  Brain,
   Settings as SettingsIcon,
   Minimize2,
   ExternalLink,
@@ -34,8 +36,9 @@ export const App: React.FC = () => {
   const [sessions, setSessions] = useState<SessionRecord[]>(() => storage.getSessions());
   const [classes, setClasses] = useState<ClassSchedule[]>(() => storage.getClasses());
   const [exams, setExams] = useState<ExamEvent[]>(() => storage.getExams());
+  const [spacedItems, setSpacedItems] = useState<SpacedItem[]>(() => storage.getSpacedItems());
 
-  const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'schedule' | 'analytics' | 'subjects'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'schedule' | 'spaced' | 'analytics' | 'subjects'>('timer');
   const [scheduleSubTab, setScheduleSubTab] = useState<'calendar' | 'alarms'>('calendar');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMiniMode, setIsMiniMode] = useState(false);
@@ -186,6 +189,7 @@ export const App: React.FC = () => {
       setSessions(storage.getSessions());
       setClasses(storage.getClasses());
       setExams(storage.getExams());
+      setSpacedItems(storage.getSpacedItems());
       setIsSettingsOpen(false);
       alert('Data imported successfully!');
     } else {
@@ -292,6 +296,87 @@ export const App: React.FC = () => {
     storage.saveExams(updated);
   };
 
+  // Handlers for Spaced Repetition (1, 3, 7, 14 days)
+  const handleAddSpacedItem = (title: string, subjectId?: string, studyDateStr?: string, notes?: string) => {
+    const baseDate = studyDateStr ? new Date(studyDateStr + 'T00:00:00') : new Date();
+    const intervals = [1, 3, 7, 14];
+
+    const steps = intervals.map((interval) => {
+      const scheduled = new Date(baseDate);
+      scheduled.setDate(scheduled.getDate() + interval);
+      const scheduledDate = scheduled.toISOString().split('T')[0];
+      return {
+        intervalDays: interval,
+        scheduledDate,
+        completed: false,
+      };
+    });
+
+    const newItem: SpacedItem = {
+      id: 'spaced-' + Date.now(),
+      title,
+      subjectId,
+      studyDate: baseDate.toISOString().split('T')[0],
+      notes,
+      steps,
+    };
+
+    const updated = [newItem, ...spacedItems];
+    setSpacedItems(updated);
+    storage.saveSpacedItems(updated);
+  };
+
+  const handleToggleSpacedStep = (itemId: string, intervalDays: number) => {
+    const updated = spacedItems.map((item) => {
+      if (item.id === itemId) {
+        return {
+          ...item,
+          steps: item.steps.map((st) => {
+            if (st.intervalDays === intervalDays) {
+              const nextCompleted = !st.completed;
+              return {
+                ...st,
+                completed: nextCompleted,
+                completedAt: nextCompleted ? new Date().toISOString() : undefined,
+              };
+            }
+            return st;
+          }),
+        };
+      }
+      return item;
+    });
+    setSpacedItems(updated);
+    storage.saveSpacedItems(updated);
+  };
+
+  const handleDeleteSpacedItem = (itemId: string) => {
+    const updated = spacedItems.filter((i) => i.id !== itemId);
+    setSpacedItems(updated);
+    storage.saveSpacedItems(updated);
+  };
+
+  const handleFocusSpacedItem = (topicTitle: string, subId?: string) => {
+    if (subId) {
+      const sub = subjects.find((s) => s.id === subId);
+      if (sub) setSelectedSubject(sub);
+    }
+    // Also create or select active task
+    const newTask: Task = {
+      id: 'task-' + Date.now(),
+      title: `Review: ${topicTitle}`,
+      subjectId: subId,
+      estimatedPomodoros: 2,
+      completedPomodoros: 0,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    setTasks([newTask, ...tasks]);
+    storage.saveTasks([newTask, ...tasks]);
+    setActiveTaskId(newTask.id);
+    setActiveTab('timer');
+  };
+
   return (
     <div className="min-h-screen bg-mesh-dark text-slate-100 flex flex-col justify-between relative selection:bg-rose-500/30 selection:text-rose-200">
       {/* Top Floating Glass Header */}
@@ -341,6 +426,15 @@ export const App: React.FC = () => {
             >
               <CalendarIcon className="w-4 h-4" />
               <span>Exams & Alarms</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('spaced')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'spaced' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Brain className="w-4 h-4" />
+              <span>Spaced Recall</span>
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
@@ -510,6 +604,17 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'spaced' && (
+          <SpacedRepetition
+            items={spacedItems}
+            subjects={subjects}
+            onAddItem={handleAddSpacedItem}
+            onToggleStep={handleToggleSpacedStep}
+            onDeleteItem={handleDeleteSpacedItem}
+            onFocusItem={handleFocusSpacedItem}
+          />
+        )}
+
         {activeTab === 'analytics' && (
           <Analytics sessions={sessions} subjects={subjects} settings={settings} />
         )}
@@ -586,6 +691,17 @@ export const App: React.FC = () => {
         >
           <CalendarIcon className="w-5 h-5" />
           <span className="text-[10px] tracking-wider font-semibold">Schedule</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('spaced')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
+            activeTab === 'spaced'
+              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Brain className="w-5 h-5" />
+          <span className="text-[10px] tracking-wider font-semibold">Spaced</span>
         </button>
         <button
           onClick={() => setActiveTab('analytics')}

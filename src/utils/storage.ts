@@ -1,4 +1,4 @@
-import { Settings, Subject, Task, SessionRecord, ClassSchedule, ExamEvent } from '../types';
+import { Settings, Subject, Task, SessionRecord, ClassSchedule, ExamEvent, SpacedItem } from '../types';
 
 export const DEFAULT_SETTINGS: Settings = {
   focusDuration: 25,
@@ -31,6 +31,7 @@ const KEYS = {
   SESSIONS: 'pomostudy_sessions',
   CLASSES: 'pomostudy_classes',
   EXAMS: 'pomostudy_exams',
+  SPACED_ITEMS: 'pomostudy_spaced_items',
 };
 
 export const storage = {
@@ -112,9 +113,22 @@ export const storage = {
     localStorage.setItem(KEYS.EXAMS, JSON.stringify(exams));
   },
 
+  getSpacedItems(): SpacedItem[] {
+    try {
+      const data = localStorage.getItem(KEYS.SPACED_ITEMS);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  saveSpacedItems(items: SpacedItem[]) {
+    localStorage.setItem(KEYS.SPACED_ITEMS, JSON.stringify(items));
+  },
+
   exportBackup(): string {
     const backup = {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       settings: this.getSettings(),
       subjects: this.getSubjects(),
@@ -122,6 +136,7 @@ export const storage = {
       sessions: this.getSessions(),
       classes: this.getClasses(),
       exams: this.getExams(),
+      spacedItems: this.getSpacedItems(),
     };
     return JSON.stringify(backup, null, 2);
   },
@@ -135,6 +150,7 @@ export const storage = {
       if (data.sessions) this.saveSessions(data.sessions);
       if (data.classes) this.saveClasses(data.classes);
       if (data.exams) this.saveExams(data.exams);
+      if (data.spacedItems) this.saveSpacedItems(data.spacedItems);
       return true;
     } catch {
       return false;

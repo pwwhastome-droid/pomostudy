@@ -25,6 +25,22 @@ export interface ExamEvent {
   notes?: string;
 }
 
+export interface SpacedReviewStep {
+  intervalDays: number; // 1, 3, 7, 14
+  scheduledDate: string; // "YYYY-MM-DD"
+  completed: boolean;
+  completedAt?: string;
+}
+
+export interface SpacedItem {
+  id: string;
+  title: string; // e.g. "Biology - Chapter 3"
+  subjectId?: string;
+  studyDate: string; // "YYYY-MM-DD" original date studied
+  notes?: string;
+  steps: SpacedReviewStep[]; // 1, 3, 7, 14 days
+}
+
 export interface Task {
   id: string;
   title: string;
