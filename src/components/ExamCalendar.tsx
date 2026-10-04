@@ -3,14 +3,13 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Trash2,
   Clock,
   AlertCircle,
-  X,
 } from 'lucide-react';
 import { ExamEvent, Subject } from '../types';
 import { SubjectSelect } from './SubjectSelect';
+import { AddAction, ConfirmDelete, Sheet, SheetActions } from './ui';
+import { localDateStr } from '../utils/date';
 
 interface ExamCalendarProps {
   exams: ExamEvent[];
@@ -32,7 +31,7 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
 }) => {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
+    return localDateStr();
   });
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState('');
@@ -54,7 +53,7 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
   const handleToday = () => {
     const today = new Date();
     setCurrentDate(today);
-    setSelectedDateStr(today.toISOString().split('T')[0]);
+    setSelectedDateStr(localDateStr(today));
   };
 
   // Calendar matrix calculations
@@ -69,13 +68,13 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
     isToday: boolean;
   }> = [];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr();
 
   // Leading days from previous month
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     const d = daysInPrevMonth - i;
     const prevDate = new Date(year, month - 1, d);
-    const dateStr = prevDate.toISOString().split('T')[0];
+    const dateStr = localDateStr(prevDate);
     calendarDays.push({
       day: d,
       dateStr,
@@ -101,7 +100,7 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
   const remaining = (7 - (calendarDays.length % 7)) % 7;
   for (let d = 1; d <= remaining; d++) {
     const nextDate = new Date(year, month + 1, d);
-    const dateStr = nextDate.toISOString().split('T')[0];
+    const dateStr = localDateStr(nextDate);
     calendarDays.push({
       day: d,
       dateStr,
@@ -171,18 +170,19 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleToday}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold glass-pill text-slate-300 hover:text-white transition active:scale-95"
+            className="h-10 px-3.5 rounded-xl text-xs font-bold glass-pill text-slate-300 hover:text-white transition active:scale-95"
           >
             Today
           </button>
-          <div className="flex items-center gap-1 glass-pill rounded-xl p-0.5">
+          <div className="flex-1 sm:flex-none flex items-center justify-between gap-1 glass-pill rounded-xl p-0.5">
             <button
               onClick={handlePrevMonth}
-              title="Previous Month"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white transition"
+              title="Previous month"
+              aria-label="Previous month"
+              className="w-10 h-9 flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -191,12 +191,14 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
             </span>
             <button
               onClick={handleNextMonth}
-              title="Next Month"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white transition"
+              title="Next month"
+              aria-label="Next month"
+              className="w-10 h-9 flex items-center justify-center rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
+          <AddAction label="Add exam" onClick={() => setIsAdding(true)} />
         </div>
       </div>
 
@@ -280,96 +282,85 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
           <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/5 flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/5">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Selected Date
-                </span>
                 <h3 className="text-sm font-bold text-white">{selectedFormatted}</h3>
               </div>
-              <button
-                onClick={() => setIsAdding(!isAdding)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-md shadow-rose-500/20 transition active:scale-95"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Exam</span>
-              </button>
+
             </div>
 
-            {/* Add Exam inline form */}
-            {isAdding && (
-              <form onSubmit={handleSubmit} className="mb-3 p-3 rounded-xl bg-slate-950/80 border border-white/10 space-y-2.5 animate-in fade-in">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-rose-300">Schedule New Exam</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsAdding(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-white"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+            <Sheet open={isAdding} title={`New exam · ${selectedFormatted}`} onClose={() => setIsAdding(false)}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="exam-title" className="text-xs font-semibold text-slate-400 block mb-1.5">
+                    Exam or deadline
+                  </label>
+                  <input
+                    id="exam-title"
+                    type="text"
+                    placeholder="e.g. Calculus midterm II"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full h-11 px-3.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500"
+                    autoFocus
+                  />
                 </div>
 
-                <input
-                  type="text"
-                  placeholder="Exam title (e.g. Calculus Midterm II)..."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-white/10 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
-                  autoFocus
-                />
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 block mb-1.5">Subject</span>
+                  <SubjectSelect
+                    subjects={subjects}
+                    selectedSubject={subjects.find((s) => s.id === subjectId) || null}
+                    onSelect={(sub) => setSubjectId(sub.id)}
+                    size="md"
+                  />
+                </div>
 
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <div className="flex-1 min-w-[130px]">
-                    <SubjectSelect
-                      subjects={subjects}
-                      selectedSubject={subjects.find((s) => s.id === subjectId) || null}
-                      onSelect={(sub) => setSubjectId(sub.id)}
-                      size="sm"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-white/10">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <div>
+                  <label htmlFor="exam-time" className="text-xs font-semibold text-slate-400 block mb-1.5">
+                    Time
+                  </label>
+                  <div className="flex items-center gap-2 bg-slate-950/80 px-3 h-11 rounded-xl border border-white/10">
+                    <Clock className="w-4 h-4 text-slate-400" />
                     <input
+                      id="exam-time"
                       type="time"
                       value={examTime}
                       onChange={(e) => setExamTime(e.target.value)}
-                      className="bg-transparent text-xs text-white focus:outline-none"
+                      className="flex-1 bg-transparent text-sm font-semibold text-white"
                     />
                   </div>
                 </div>
 
-                <input
-                  type="text"
-                  placeholder="Optional room / syllabus notes..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-slate-300 placeholder-slate-500 focus:outline-none"
-                />
-
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsAdding(false)}
-                    className="px-2.5 py-1 text-xs text-slate-400 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-3 py-1 rounded-lg text-xs font-bold bg-rose-500 text-white"
-                  >
-                    Save
-                  </button>
+                <div>
+                  <label htmlFor="exam-notes" className="text-xs font-semibold text-slate-400 block mb-1.5">
+                    Notes (optional)
+                  </label>
+                  <input
+                    id="exam-notes"
+                    type="text"
+                    placeholder="Room, syllabus, what to bring"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full h-11 px-3.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-200 placeholder-slate-500"
+                  />
                 </div>
+
+                <SheetActions onCancel={() => setIsAdding(false)} submitLabel="Save exam" />
               </form>
-            )}
+            </Sheet>
 
             {/* List of exams on selected date */}
-            <div className="space-y-2 flex-1 overflow-y-auto max-h-56 pr-1">
+            <div className="space-y-2 flex-1">
               {selectedDateExams.length === 0 ? (
                 <div className="text-center py-6 text-slate-500 text-xs flex flex-col items-center justify-center gap-1.5">
                   <AlertCircle className="w-5 h-5 text-slate-600" />
-                  <span>No exams scheduled on this date.</span>
+                  <span>No exams on this date.</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsAdding(true)}
+                    className="mt-1 h-9 px-3 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs font-bold"
+                  >
+                    Add one
+                  </button>
                 </div>
               ) : (
                 selectedDateExams.map((ex) => {
@@ -377,7 +368,7 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
                   return (
                     <div
                       key={ex.id}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-white/5 hover:border-white/15 transition"
+                      className="flex items-center justify-between gap-2 pl-3 pr-1 py-1.5 rounded-xl bg-slate-950/70 border border-white/5 hover:border-white/15 transition"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span
@@ -397,13 +388,7 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => onDeleteExam(ex.id)}
-                        title="Delete exam"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition shrink-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <ConfirmDelete onConfirm={() => onDeleteExam(ex.id)} label="Delete exam" />
                     </div>
                   );
                 })
@@ -414,8 +399,8 @@ export const ExamCalendar: React.FC<ExamCalendarProps> = ({
           {/* Upcoming Exams Countdown Banner */}
           {upcomingExams.length > 0 && (
             <div className="p-3 bg-gradient-to-r from-rose-500/10 to-amber-500/10 rounded-2xl border border-rose-500/20">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 block mb-1">
-                Next Upcoming Exam
+              <span className="text-[11px] font-bold text-rose-300 block mb-1">
+                Next exam
               </span>
               <div className="flex items-center justify-between text-xs">
                 <div className="truncate mr-2">

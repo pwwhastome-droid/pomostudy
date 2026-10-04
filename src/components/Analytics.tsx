@@ -1,6 +1,7 @@
 import React from 'react';
 import { BarChart3, Flame, Clock, Award, Calendar } from 'lucide-react';
 import { SessionRecord, Subject, Settings } from '../types';
+import { localDateStr, localDateOfTimestamp } from '../utils/date';
 
 interface AnalyticsProps {
   sessions: SessionRecord[];
@@ -12,13 +13,13 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
   const subjectMap = new Map(subjects.map((s) => [s.id, s]));
 
   // Today's date YYYY-MM-DD
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr();
 
   const focusSessions = sessions.filter((s) => s.mode === 'focus');
 
   // Today's focus minutes
   const todayFocusMinutes = focusSessions
-    .filter((s) => s.timestamp.startsWith(todayStr))
+    .filter((s) => localDateOfTimestamp(s.timestamp) === todayStr)
     .reduce((sum, s) => sum + s.durationMinutes, 0);
 
   // Total all-time focus minutes
@@ -27,7 +28,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
 
   // Calculate Streak
   const uniqueDates = Array.from(
-    new Set(focusSessions.map((s) => s.timestamp.split('T')[0]))
+    new Set(focusSessions.map((s) => localDateOfTimestamp(s.timestamp)))
   ).sort().reverse();
 
   let streak = 0;
@@ -40,7 +41,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
   }
 
   while (true) {
-    const dStr = checkDate.toISOString().split('T')[0];
+    const dStr = localDateStr(checkDate);
     if (uniqueDates.includes(dStr)) {
       streak++;
       checkDate.setDate(checkDate.getDate() - 1);
@@ -53,10 +54,10 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
   const last7Days = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    const dStr = d.toISOString().split('T')[0];
+    const dStr = localDateStr(d);
     const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
     const minutes = focusSessions
-      .filter((s) => s.timestamp.startsWith(dStr))
+      .filter((s) => localDateOfTimestamp(s.timestamp) === dStr)
       .reduce((sum, s) => sum + s.durationMinutes, 0);
     return { date: dStr, label: dayLabel, minutes };
   });
@@ -131,7 +132,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ sessions, subjects, settin
             <span>Pomos Today</span>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
-            {focusSessions.filter((s) => s.timestamp.startsWith(todayStr)).length}
+            {focusSessions.filter((s) => localDateOfTimestamp(s.timestamp) === todayStr).length}
           </div>
           <div className="text-[11px] text-slate-400 mt-1.5 font-medium">Sessions done</div>
         </div>

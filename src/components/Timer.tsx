@@ -4,6 +4,8 @@ import { TimerMode, Subject, Settings } from '../types';
 import { SubjectSelect } from './SubjectSelect';
 
 interface TimerProps {
+  /** Floating-window (Picture-in-Picture) layout: smaller dial, no ambient pill. */
+  compact?: boolean;
   mode: TimerMode;
   timeLeft: number;
   totalDuration: number;
@@ -22,6 +24,7 @@ interface TimerProps {
 }
 
 export const Timer: React.FC<TimerProps> = ({
+  compact = false,
   mode,
   timeLeft,
   totalDuration,
@@ -80,10 +83,10 @@ export const Timer: React.FC<TimerProps> = ({
   const cycleIndex = sessionCount % settings.longBreakInterval;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto select-none">
+    <div className={`relative flex flex-col items-center justify-center w-full mx-auto select-none ${compact ? 'max-w-full' : 'max-w-lg'}`}>
       {/* Dynamic Aura Glow */}
       <div 
-        className="absolute w-96 h-96 rounded-full blur-[110px] pointer-events-none transition-all duration-1000 opacity-30 -z-10"
+        className={`absolute rounded-full pointer-events-none transition-all duration-1000 opacity-30 -z-10 ${compact ? 'w-56 h-56 blur-[70px]' : 'w-96 h-96 blur-[110px]'}`}
         style={{
           backgroundColor: modeTheme.accent,
           transform: isRunning ? 'scale(1.2)' : 'scale(0.9)',
@@ -91,15 +94,15 @@ export const Timer: React.FC<TimerProps> = ({
       />
 
       {/* Pill Switcher */}
-      <div className="flex items-center p-1.5 glass-pill rounded-full mb-6 border border-white/10 shadow-2xl">
+      <div className={`flex items-center glass-pill rounded-full border border-white/10 shadow-2xl ${compact ? 'p-1 mb-3' : 'p-1.5 mb-6'}`}>
         {(['focus', 'shortBreak', 'longBreak'] as TimerMode[]).map((m) => {
           const isActive = mode === m;
-          const label = m === 'focus' ? 'Focus' : m === 'shortBreak' ? 'Short Break' : 'Long Break';
+          const label = m === 'focus' ? 'Focus' : m === 'shortBreak' ? (compact ? 'Short' : 'Short Break') : (compact ? 'Long' : 'Long Break');
           return (
             <button
               key={m}
               onClick={() => onSwitchMode(m)}
-              className={`px-6 py-2.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 cursor-pointer active:scale-95 ${
+              className={`${compact ? 'px-3 py-1.5 text-[10px]' : 'px-3.5 sm:px-6 h-11 text-xs'} rounded-full font-bold tracking-wide transition-all duration-300 cursor-pointer active:scale-95 ${
                 isActive
                   ? modeTheme.tabActive + ' font-extrabold shadow-lg scale-102'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -114,7 +117,8 @@ export const Timer: React.FC<TimerProps> = ({
       {/* Modern Circular Dial */}
       <div className="relative flex items-center justify-center my-1">
         <svg 
-          className={`w-76 h-76 sm:w-88 sm:h-88 -rotate-90 transform ${isRunning ? 'glow-active' : ''}`}
+          viewBox={compact ? '0 0 304 304' : undefined}
+          className={`${compact ? 'w-44 h-44' : 'w-76 h-76 sm:w-88 sm:h-88'} -rotate-90 transform ${isRunning ? 'glow-active' : ''}`}
           style={{
             ['--glow-color' as string]: modeTheme.accent,
             ['--glow-color-soft' as string]: modeTheme.accentSoft,
@@ -168,9 +172,13 @@ export const Timer: React.FC<TimerProps> = ({
         </svg>
 
         {/* Center Display Details */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+        <div className={`absolute inset-0 flex flex-col items-center justify-center text-center ${compact ? 'p-4' : 'p-6'}`}>
           {/* Subject Badge / Selector */}
-          {mode === 'focus' ? (
+          {compact ? (
+            <span className="text-[9px] font-bold tracking-widest text-slate-400 uppercase mb-1 max-w-[7rem] truncate">
+              {mode === 'focus' ? selectedSubject?.name || modeTheme.label : 'Rest Well'}
+            </span>
+          ) : mode === 'focus' ? (
             <div className="relative mb-2">
               <SubjectSelect
                 subjects={subjects}
@@ -187,13 +195,13 @@ export const Timer: React.FC<TimerProps> = ({
 
           {/* Digits Display */}
           <div className="flex items-center justify-center">
-            <span className="text-6xl sm:text-7xl font-extrabold tracking-tight text-white font-['JetBrains_Mono',monospace] drop-shadow-2xl">
+            <span className={`${compact ? 'text-4xl' : 'text-6xl sm:text-7xl'} font-extrabold tracking-tight text-white font-['JetBrains_Mono',monospace] drop-shadow-2xl`}>
               {formattedTime}
             </span>
           </div>
 
           {/* Subtitle / Session Counter */}
-          <div className="flex items-center gap-2 mt-2">
+          <div className={`items-center gap-2 mt-2 ${compact ? 'hidden' : 'flex'}`}>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               {modeTheme.label}
             </span>
@@ -204,7 +212,7 @@ export const Timer: React.FC<TimerProps> = ({
           </div>
 
           {/* Cycle Dots */}
-          <div className="flex items-center gap-2 mt-3 p-1.5 px-3 rounded-full bg-slate-950/60 border border-white/5">
+          <div className={`items-center gap-2 mt-3 p-1.5 px-3 rounded-full bg-slate-950/60 border border-white/5 ${compact ? 'hidden' : 'flex'}`}>
             {Array.from({ length: settings.longBreakInterval }).map((_, idx) => {
               const isPast = idx < cycleIndex;
               const isCurrent = idx === cycleIndex && isRunning && mode === 'focus';
@@ -226,34 +234,34 @@ export const Timer: React.FC<TimerProps> = ({
       </div>
 
       {/* Main Tactile Action Controls */}
-      <div className="flex items-center gap-6 mt-8">
+      <div className={`flex items-center ${compact ? 'gap-3 mt-4' : 'gap-3 sm:gap-6 mt-8'}`}>
         <button
           onClick={onReset}
           title="Reset timer (Alt+R)"
-          className="group flex flex-col items-center gap-1.5 p-3.5 px-4 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/25 transition-all duration-200 active:scale-90 hover:scale-105"
+          className={`group flex flex-col items-center gap-1.5 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/25 transition-all duration-200 active:scale-90 hover:scale-105 ${compact ? 'p-2.5' : 'p-3.5 min-w-[64px]'}`}
         >
           <RotateCcw className="w-5 h-5 group-hover:-rotate-45 transition-transform duration-300" />
-          <span className="text-[10px] font-semibold text-slate-400 group-hover:text-slate-200 tracking-wider">RESET</span>
+          <span className={`text-[10px] font-semibold text-slate-400 group-hover:text-slate-200 tracking-wider ${compact ? 'hidden' : ''}`}>RESET</span>
         </button>
 
         <button
           onClick={isRunning ? onPause : onStart}
-          className={`group flex items-center justify-center gap-3 px-8 h-20 rounded-3xl ${modeTheme.heroButton} transition-all duration-200 active:scale-95 hover:scale-105 cursor-pointer`}
-          style={{ minWidth: '170px' }}
+          className={`group flex items-center justify-center ${compact ? '' : 'min-w-[150px] sm:min-w-[170px]'} ${compact ? 'gap-2 px-4 h-14 rounded-2xl' : 'gap-3 px-6 sm:px-8 h-20 rounded-3xl'} ${modeTheme.heroButton} transition-all duration-200 active:scale-95 hover:scale-105 cursor-pointer`}
+          style={{ minWidth: compact ? '110px' : undefined }}
         >
           {isRunning ? (
             <>
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
                 <Pause className="w-6 h-6 fill-current drop-shadow-md" />
               </div>
-              <span className="text-base font-extrabold tracking-wider">PAUSE</span>
+              <span className={`${compact ? 'text-sm' : 'text-base'} font-extrabold tracking-wider`}>PAUSE</span>
             </>
           ) : (
             <>
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
                 <Play className="w-6 h-6 fill-current ml-0.5 drop-shadow-md" />
               </div>
-              <span className="text-base font-extrabold tracking-wider">START</span>
+              <span className={`${compact ? 'text-sm' : 'text-base'} font-extrabold tracking-wider`}>START</span>
             </>
           )}
         </button>
@@ -261,22 +269,22 @@ export const Timer: React.FC<TimerProps> = ({
         <button
           onClick={onSkip}
           title="Skip session (Alt+S)"
-          className="group flex flex-col items-center gap-1.5 p-3.5 px-4 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/25 transition-all duration-200 active:scale-90 hover:scale-105"
+          className={`group flex flex-col items-center gap-1.5 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/25 transition-all duration-200 active:scale-90 hover:scale-105 ${compact ? 'p-2.5' : 'p-3.5 px-4'}`}
         >
           <SkipForward className="w-5 h-5 group-hover:translate-x-0.5 transition-transform duration-300" />
-          <span className="text-[10px] font-semibold text-slate-400 group-hover:text-slate-200 tracking-wider">SKIP</span>
+          <span className={`text-[10px] font-semibold text-slate-400 group-hover:text-slate-200 tracking-wider ${compact ? 'hidden' : ''}`}>SKIP</span>
         </button>
       </div>
 
       {/* Ambient Sound Audio Pill */}
-      <div className="flex items-center gap-1.5 mt-8 px-4 py-2 glass-pill rounded-full text-xs text-slate-400 shadow-lg border border-white/10">
+      <div className={`items-center gap-1.5 mt-8 px-4 py-2 glass-pill rounded-full text-xs text-slate-400 shadow-lg border border-white/10 ${compact ? 'hidden' : 'flex'}`}>
         <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300 pr-1 tracking-wide">
           <Volume2 className="w-3.5 h-3.5 text-rose-400" />
-          AMBIENT:
+          <span className="hidden sm:inline">AMBIENT:</span>
         </span>
         <button
           onClick={() => onUpdateSettings({ ambientNoise: 'none' })}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 ${
+          className={`h-9 px-3 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 ${
             settings.ambientNoise === 'none'
               ? 'bg-slate-800 text-white font-bold shadow-md shadow-black/40 border border-white/10'
               : 'hover:text-slate-200 hover:bg-white/5'
@@ -288,7 +296,7 @@ export const Timer: React.FC<TimerProps> = ({
         </button>
         <button
           onClick={() => onUpdateSettings({ ambientNoise: 'rain' })}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 ${
+          className={`h-9 px-3 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 ${
             settings.ambientNoise === 'rain'
               ? 'bg-blue-500/25 text-blue-300 font-bold border border-blue-500/40 shadow-md shadow-blue-500/20'
               : 'hover:text-slate-200 hover:bg-white/5'
@@ -300,7 +308,7 @@ export const Timer: React.FC<TimerProps> = ({
         </button>
         <button
           onClick={() => onUpdateSettings({ ambientNoise: 'white' })}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 ${
+          className={`h-9 px-3 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 ${
             settings.ambientNoise === 'white'
               ? 'bg-purple-500/25 text-purple-300 font-bold border border-purple-500/40 shadow-md shadow-purple-500/20'
               : 'hover:text-slate-200 hover:bg-white/5'

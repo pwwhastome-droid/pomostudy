@@ -1,4 +1,4 @@
-import { Settings, Subject, Task, SessionRecord, ClassSchedule, ExamEvent, SpacedItem } from '../types';
+import { Settings, Subject, Task, SessionRecord, ClassSchedule, ExamEvent, SpacedItem, PersistedTimer, TimerContext } from '../types';
 
 export const DEFAULT_SETTINGS: Settings = {
   focusDuration: 25,
@@ -32,6 +32,8 @@ const KEYS = {
   CLASSES: 'pomostudy_classes',
   EXAMS: 'pomostudy_exams',
   SPACED_ITEMS: 'pomostudy_spaced_items',
+  TIMER: 'pomostudy_timer_state',
+  TIMER_CTX: 'pomostudy_timer_context',
 };
 
 export const storage = {
@@ -124,6 +126,53 @@ export const storage = {
 
   saveSpacedItems(items: SpacedItem[]) {
     localStorage.setItem(KEYS.SPACED_ITEMS, JSON.stringify(items));
+  },
+
+  getTimerState(): PersistedTimer | null {
+    try {
+      const raw = localStorage.getItem(KEYS.TIMER);
+      if (!raw) return null;
+      const t = JSON.parse(raw);
+      const modes = ['focus', 'shortBreak', 'longBreak'];
+      if (
+        !modes.includes(t.mode) ||
+        typeof t.isRunning !== 'boolean' ||
+        !Number.isFinite(t.timeLeft) ||
+        !Number.isFinite(t.totalDuration) ||
+        !Number.isFinite(t.sessionCount) ||
+        (t.endTime !== null && !Number.isFinite(t.endTime))
+      ) {
+        return null;
+      }
+      return t as PersistedTimer;
+    } catch {
+      return null;
+    }
+  },
+
+  saveTimerState(state: PersistedTimer) {
+    try {
+      localStorage.setItem(KEYS.TIMER, JSON.stringify(state));
+    } catch {
+      /* storage full / unavailable */
+    }
+  },
+
+  getTimerContext(): TimerContext {
+    try {
+      const raw = localStorage.getItem(KEYS.TIMER_CTX);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  saveTimerContext(ctx: TimerContext) {
+    try {
+      localStorage.setItem(KEYS.TIMER_CTX, JSON.stringify(ctx));
+    } catch {
+      /* ignore */
+    }
   },
 
   exportBackup(): string {

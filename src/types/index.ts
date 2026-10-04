@@ -85,3 +85,18 @@ export interface DailyStats {
   sessionsCompleted: number;
   bySubject: Record<string, number>;
 }
+
+/** Running/paused timer snapshot so a reload or Android process kill doesn't lose the session. */
+export interface PersistedTimer {
+  mode: TimerMode;
+  isRunning: boolean;
+  endTime: number | null; // epoch ms, only when isRunning
+  timeLeft: number; // seconds (authoritative when paused)
+  totalDuration: number; // seconds
+  sessionCount: number;
+}
+
+export interface TimerContext {
+  subjectId?: string;
+  taskId?: string;
+}

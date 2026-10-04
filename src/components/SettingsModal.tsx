@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
-import { X, Volume2, Clock, Download, Upload } from 'lucide-react';
+import { Volume2, Clock, Download, Upload } from 'lucide-react';
 import { Settings } from '../types';
 import { soundEngine } from '../utils/audio';
+import { Sheet } from './ui';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -47,21 +48,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <span>Preferences & Settings</span>
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+    <Sheet open={isOpen} title="Settings" onClose={onClose}>
+      <div className="space-y-6">
         {/* Timer Durations */}
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -190,7 +178,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </select>
                 <button
                   onClick={() => handleTestSound(settings.soundType)}
-                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-[11px] text-slate-300"
+                  className="h-9 px-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-semibold text-slate-300"
                 >
                   Test
                 </button>
@@ -232,7 +220,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex items-center gap-2 pt-1">
             <button
               onClick={onExportData}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition"
+              className="flex-1 flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition"
             >
               <Download className="w-4 h-4" />
               <span>Export Backup</span>
@@ -240,7 +228,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition"
+              className="flex-1 flex items-center justify-center gap-1.5 h-11 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition"
             >
               <Upload className="w-4 h-4" />
               <span>Restore Backup</span>
@@ -255,6 +243,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </Sheet>
   );
 };

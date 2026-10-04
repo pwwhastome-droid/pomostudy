@@ -15,6 +15,7 @@ import { useMediaSession } from './hooks/useMediaSession';
 import { usePictureInPicture } from './hooks/usePictureInPicture';
 import { useScheduleReminders } from './hooks/useScheduleReminders';
 import { storage } from './utils/storage';
+import { localDateStr } from './utils/date';
 import { Settings, Subject, Task, SessionRecord, TimerMode, ClassSchedule, ExamEvent, SpacedItem } from './types';
 import {
   Timer as TimerIcon,
@@ -29,6 +30,20 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
+
+type TabId = 'timer' | 'tasks' | 'schedule' | 'spaced' | 'analytics' | 'subjects';
+
+const TABS: { id: TabId; label: string; mobileLabel: string; icon: React.ElementType }[] = [
+  { id: 'timer', label: 'Timer', mobileLabel: 'Timer', icon: TimerIcon },
+  { id: 'tasks', label: 'Tasks', mobileLabel: 'Tasks', icon: CheckSquare },
+  { id: 'spaced', label: 'Spaced Recall', mobileLabel: 'Recall', icon: Brain },
+  { id: 'schedule', label: 'Exams & Alarms', mobileLabel: 'Schedule', icon: CalendarIcon },
+  { id: 'analytics', label: 'Analytics', mobileLabel: 'Stats', icon: BarChart3 },
+  { id: 'subjects', label: 'Subjects', mobileLabel: 'Subjects', icon: BookOpen },
+];
+// Subjects lives in the header on phones so the bottom bar keeps 5 comfortably-sized targets.
+const MOBILE_TAB_IDS: TabId[] = ['timer', 'tasks', 'spaced', 'schedule', 'analytics'];
+
 export const App: React.FC = () => {
   const [settings, setSettings] = useState<Settings>(() => storage.getSettings());
   const [subjects, setSubjects] = useState<Subject[]>(() => storage.getSubjects());
@@ -38,13 +53,24 @@ export const App: React.FC = () => {
   const [exams, setExams] = useState<ExamEvent[]>(() => storage.getExams());
   const [spacedItems, setSpacedItems] = useState<SpacedItem[]>(() => storage.getSpacedItems());
 
-  const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'schedule' | 'spaced' | 'analytics' | 'subjects'>('timer');
+  const [activeTab, setActiveTab] = useState<TabId>('timer');
   const [scheduleSubTab, setScheduleSubTab] = useState<'calendar' | 'alarms'>('calendar');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMiniMode, setIsMiniMode] = useState(false);
 
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(() => subjects[0] || null);
-  const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
+  // Restore the subject/task the running timer belongs to (so a restored session is credited correctly)
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(() => {
+    const ctx = storage.getTimerContext();
+    return subjects.find((s) => s.id === ctx.subjectId) || subjects[0] || null;
+  });
+  const [activeTaskId, setActiveTaskId] = useState<string | undefined>(() => {
+    const id = storage.getTimerContext().taskId;
+    return id && tasks.some((t) => t.id === id) ? id : undefined;
+  });
+
+  useEffect(() => {
+    storage.saveTimerContext({ subjectId: selectedSubject?.id, taskId: activeTaskId });
+  }, [selectedSubject, activeTaskId]);
 
   // Trigger celebration confetti
   const triggerConfetti = () => {
@@ -58,14 +84,14 @@ export const App: React.FC = () => {
 
   // On session completion handler
   const handleSessionComplete = useCallback(
-    (completedMode: TimerMode, durationMinutes: number) => {
+    (completedMode: TimerMode, durationMinutes: number, completedAt?: string) => {
       const newSession: SessionRecord = {
         id: 'sess-' + Date.now(),
         mode: completedMode,
         subjectId: completedMode === 'focus' ? selectedSubject?.id : undefined,
         taskId: completedMode === 'focus' ? activeTaskId : undefined,
         durationMinutes,
-        timestamp: new Date().toISOString(),
+        timestamp: completedAt || new Date().toISOString(),
       };
 
       setSessions((prev) => {
@@ -175,7 +201,7 @@ export const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pomostudy-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `pomostudy-backup-${localDateStr()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -304,7 +330,7 @@ export const App: React.FC = () => {
     const steps = intervals.map((interval) => {
       const scheduled = new Date(baseDate);
       scheduled.setDate(scheduled.getDate() + interval);
-      const scheduledDate = scheduled.toISOString().split('T')[0];
+      const scheduledDate = localDateStr(scheduled);
       return {
         intervalDays: interval,
         scheduledDate,
@@ -316,7 +342,7 @@ export const App: React.FC = () => {
       id: 'spaced-' + Date.now(),
       title,
       subjectId,
-      studyDate: baseDate.toISOString().split('T')[0],
+      studyDate: localDateStr(baseDate),
       notes,
       steps,
     };
@@ -399,61 +425,20 @@ export const App: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden sm:flex items-center gap-1.5 glass-pill p-1 rounded-2xl border border-white/10">
-            <button
-              onClick={() => setActiveTab('timer')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'timer' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <TimerIcon className="w-4 h-4" />
-              <span>Timer</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('tasks')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'tasks' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <CheckSquare className="w-4 h-4" />
-              <span>Tasks</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('schedule')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'schedule' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <CalendarIcon className="w-4 h-4" />
-              <span>Exams & Alarms</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('spaced')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'spaced' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Brain className="w-4 h-4" />
-              <span>Spaced Recall</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'analytics' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Analytics</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('subjects')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'subjects' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Subjects</span>
-            </button>
+          <nav className="hidden sm:flex items-center gap-1 glass-pill p-1 rounded-2xl border border-white/10" aria-label="Main">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                aria-current={activeTab === id ? 'page' : undefined}
+                className={`flex items-center gap-2 px-3.5 h-9 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === id ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </button>
+            ))}
           </nav>
 
           {/* Quick Actions */}
@@ -474,14 +459,24 @@ export const App: React.FC = () => {
             <button
               onClick={() => setIsMiniMode(!isMiniMode)}
               title="Mini Floating Mode (Alt+M)"
-              className="p-2.5 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
+              className="w-10 h-10 flex items-center justify-center rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
             >
               <Minimize2 className="w-4 h-4" />
             </button>
             <button
+              onClick={() => setActiveTab('subjects')}
+              title="Subjects"
+              aria-label="Subjects"
+              className={`sm:hidden w-10 h-10 flex items-center justify-center rounded-2xl glass-panel transition-all active:scale-95 ${
+                activeTab === 'subjects' ? 'text-rose-300 border-rose-500/30' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
+            <button
               onClick={() => setIsSettingsOpen(true)}
               title="Settings"
-              className="p-2.5 rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
+              className="w-10 h-10 flex items-center justify-center rounded-2xl glass-panel text-slate-400 hover:text-white hover:border-white/20 transition-all active:scale-95"
             >
               <SettingsIcon className="w-4 h-4" />
             </button>
@@ -490,12 +485,13 @@ export const App: React.FC = () => {
       </header>
 
       {/* Main Responsive Canvas */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 pb-28 sm:pb-12 flex flex-col justify-center">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 pb-40 sm:pb-12 flex flex-col justify-center">
         {activeTab === 'timer' && (
           <div className="space-y-6">
             <div id="pip-original-host">
               <div id="pip-timer-wrapper">
                 <Timer
+                  compact={pip.isPipOpen}
                   mode={timer.mode}
                   timeLeft={timer.timeLeft}
                   totalDuration={timer.totalDuration}
@@ -526,7 +522,7 @@ export const App: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setActiveTaskId(undefined)}
-                  className="text-xs text-slate-400 hover:text-white font-medium px-2 py-1 rounded-lg hover:bg-slate-800 transition"
+                  className="text-xs text-slate-300 hover:text-white font-semibold h-9 px-3 rounded-lg bg-slate-800/70 hover:bg-slate-700 transition shrink-0"
                 >
                   Clear
                 </button>
@@ -560,28 +556,28 @@ export const App: React.FC = () => {
         {activeTab === 'schedule' && (
           <div className="space-y-5">
             {/* Sub-tab toggle */}
-            <div className="flex items-center p-1.5 glass-pill rounded-2xl w-fit border border-white/10 gap-1.5">
+            <div className="flex items-center p-1.5 glass-pill rounded-2xl w-full sm:w-fit border border-white/10 gap-1.5">
               <button
                 onClick={() => setScheduleSubTab('calendar')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 h-10 rounded-xl text-xs font-bold transition-all ${
                   scheduleSubTab === 'calendar'
                     ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <CalendarIcon className="w-4 h-4" />
-                <span>Exam Calendar</span>
+                <span>Exams</span>
               </button>
               <button
                 onClick={() => setScheduleSubTab('alarms')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 sm:flex-none justify-center flex items-center gap-2 px-4 h-10 rounded-xl text-xs font-bold transition-all ${
                   scheduleSubTab === 'alarms'
                     ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <Bell className="w-4 h-4" />
-                <span>Class Alarms ({classes.filter((c) => c.enabled).length})</span>
+                <span>Alarms ({classes.filter((c) => c.enabled).length})</span>
               </button>
             </div>
 
@@ -657,75 +653,25 @@ export const App: React.FC = () => {
         onImportData={handleImportData}
       />
 
-      {/* Mobile Floating Bottom Bar */}
-      <div className="sm:hidden fixed bottom-4 left-4 right-4 z-30 glass-panel rounded-3xl p-1.5 flex items-center justify-around border-white/10 shadow-2xl backdrop-blur-2xl">
-        <button
-          onClick={() => setActiveTab('timer')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
-            activeTab === 'timer'
-              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <TimerIcon className="w-5 h-5" />
-          <span className="text-[10px] tracking-wider font-semibold">Timer</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('tasks')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
-            activeTab === 'tasks'
-              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <CheckSquare className="w-5 h-5" />
-          <span className="text-[10px] tracking-wider font-semibold">Tasks</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('schedule')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
-            activeTab === 'schedule'
-              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <CalendarIcon className="w-5 h-5" />
-          <span className="text-[10px] tracking-wider font-semibold">Schedule</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('spaced')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
-            activeTab === 'spaced'
-              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Brain className="w-5 h-5" />
-          <span className="text-[10px] tracking-wider font-semibold">Spaced</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
-            activeTab === 'analytics'
-              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <BarChart3 className="w-5 h-5" />
-          <span className="text-[10px] tracking-wider font-semibold">Stats</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('subjects')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
-            activeTab === 'subjects'
-              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <BookOpen className="w-5 h-5" />
-          <span className="text-[10px] tracking-wider font-semibold">Subjects</span>
-        </button>
-      </div>
+      {/* Mobile bottom tab bar — 5 equal, full-height touch targets */}
+      <nav
+        aria-label="Main"
+        className="sm:hidden fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 glass-panel rounded-3xl p-1.5 grid grid-cols-5 gap-1 shadow-2xl"
+      >
+        {TABS.filter((t) => MOBILE_TAB_IDS.includes(t.id)).map(({ id, mobileLabel, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            aria-current={activeTab === id ? 'page' : undefined}
+            className={`h-14 flex flex-col items-center justify-center gap-1 rounded-2xl transition-all duration-200 active:scale-95 ${
+              activeTab === id ? 'bg-rose-500/15 text-rose-300' : 'text-slate-400'
+            }`}
+          >
+            <Icon className="w-5 h-5" />
+            <span className="text-[10px] font-semibold leading-none">{mobileLabel}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 };

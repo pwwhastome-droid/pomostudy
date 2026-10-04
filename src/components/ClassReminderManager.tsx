@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import {
   Bell,
   Clock,
-  Plus,
-  Trash2,
-  X,
   Calendar,
   Volume2,
   Zap,
 } from 'lucide-react';
 import { ClassSchedule, Subject } from '../types';
 import { SubjectSelect } from './SubjectSelect';
+import { AddAction, ConfirmDelete, Sheet, SheetActions } from './ui';
 import { soundEngine } from '../utils/audio';
 
 interface ClassReminderManagerProps {
@@ -123,9 +121,9 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
     : classes.filter((c) => c.days.includes(selectedFilterDay));
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="flex flex-col gap-6">
+      {/* Quick stats — below the timetable on phones so the list and actions come first */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 order-last md:order-first">
         {/* Next Alarm Card */}
         <div className="glass-panel rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">
@@ -187,7 +185,7 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
           <div className="pt-2">
             <button
               onClick={handleTestChime}
-              className="w-full py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border border-white/5"
+              className="w-full h-10 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border border-white/5"
             >
               <Volume2 className="w-3.5 h-3.5 text-rose-400" />
               <span>Test Alarm Chime</span>
@@ -199,41 +197,39 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
       {/* Main Schedule Workspace */}
       <div className="glass-panel rounded-3xl p-6 backdrop-blur-xl space-y-6">
         {/* Header Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 shrink-0 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               <Bell className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>Class Timetable & Reminders</span>
+                <span>Class alarms</span>
               </h2>
               <p className="text-xs text-slate-400">
-                Weekly repeating lecture alarms for your study courses
+                Weekly reminders before each lecture
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsAdding(!isAdding)}
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold shadow-lg shadow-indigo-500/25 transition active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Class Alarm</span>
-          </button>
+          <AddAction
+            label="Add alarm"
+            onClick={() => setIsAdding(true)}
+            accent="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 shadow-indigo-500/30"
+          />
         </div>
 
         {/* Day-of-Week Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scroll">
           <button
             onClick={() => setSelectedFilterDay('all')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+            className={`h-10 px-3.5 rounded-xl text-xs font-bold transition whitespace-nowrap shrink-0 ${
               selectedFilterDay === 'all'
                 ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
                 : 'glass-pill text-slate-400 hover:text-white'
             }`}
           >
-            All Days ({classes.length})
+            All ({classes.length})
           </button>
           {DAY_LABELS.map(({ day, label }) => {
             const count = classes.filter((c) => c.days.includes(day)).length;
@@ -242,7 +238,7 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
               <button
                 key={day}
                 onClick={() => setSelectedFilterDay(day)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`h-10 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   isSelected
                     ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/25'
                     : 'glass-pill text-slate-400 hover:text-white'
@@ -261,59 +257,35 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
           })}
         </div>
 
-        {/* Add Form Drawer */}
-        {isAdding && (
-          <form
-            onSubmit={handleSubmit}
-            className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 space-y-4 shadow-2xl animate-in fade-in zoom-in-95"
-          >
-            <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-sm font-bold text-white flex items-center gap-2">
-                <Bell className="w-4 h-4 text-indigo-400" />
-                <span>Configure Recurring Class Alarm</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-400 block mb-1.5">
-                  Class / Lecture Title:
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Organic Chemistry Lecture"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-400 block mb-1.5">
-                  Linked Subject:
-                </label>
-                <SubjectSelect
-                  subjects={subjects}
-                  selectedSubject={subjects.find((s) => s.id === subjectId) || null}
-                  onSelect={(sub) => setSubjectId(sub.id)}
-                  size="md"
-                />
-              </div>
-            </div>
-
-            {/* Repeat Days Selection */}
+        <Sheet open={isAdding} title="New class alarm" onClose={() => setIsAdding(false)}>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-400 block mb-2">
-                Repeat Every Week On:
+              <label htmlFor="class-title" className="text-xs font-semibold text-slate-400 block mb-1.5">
+                Class or lecture
               </label>
+              <input
+                id="class-title"
+                type="text"
+                placeholder="e.g. Organic chemistry lecture"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full h-11 px-3.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <span className="text-xs font-semibold text-slate-400 block mb-1.5">Subject</span>
+              <SubjectSelect
+                subjects={subjects}
+                selectedSubject={subjects.find((s) => s.id === subjectId) || null}
+                onSelect={(sub) => setSubjectId(sub.id)}
+                size="md"
+              />
+            </div>
+
+            <div>
+              <span className="text-xs font-semibold text-slate-400 block mb-2">Repeats every week on</span>
               <div className="grid grid-cols-7 gap-1.5">
                 {DAY_LABELS.map(({ day, label, full }) => {
                   const isSelected = selectedDays.includes(day);
@@ -323,50 +295,44 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
                       type="button"
                       onClick={() => toggleDay(day)}
                       title={full}
-                      className={`py-2 rounded-xl text-xs font-bold transition flex flex-col items-center gap-0.5 ${
+                      aria-label={full}
+                      aria-pressed={isSelected}
+                      className={`h-11 rounded-xl text-xs font-bold transition ${
                         isSelected
-                          ? 'bg-gradient-to-t from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-500/30 ring-1 ring-white/30'
+                          ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
                           : 'bg-slate-950/60 text-slate-400 hover:text-white border border-white/5'
                       }`}
                     >
-                      <span>{label}</span>
+                      {label}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Time Picker */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-slate-400">Alarm Time:</span>
-              <div className="flex items-center gap-1.5 bg-slate-950/90 px-3 py-2 rounded-xl border border-white/10">
+            <div>
+              <label htmlFor="class-time" className="text-xs font-semibold text-slate-400 block mb-1.5">
+                Alarm time
+              </label>
+              <div className="flex items-center gap-2 bg-slate-950/90 px-3 h-11 rounded-xl border border-white/10">
                 <Clock className="w-4 h-4 text-indigo-400" />
                 <input
+                  id="class-time"
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="bg-transparent text-sm font-bold text-white focus:outline-none font-mono"
+                  className="flex-1 bg-transparent text-sm font-bold text-white font-mono"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-500 hover:bg-indigo-600 text-white shadow-md shadow-indigo-500/25"
-              >
-                Save Class Alarm
-              </button>
-            </div>
+            <SheetActions
+              onCancel={() => setIsAdding(false)}
+              submitLabel="Save alarm"
+              accent="bg-indigo-500 hover:bg-indigo-400 shadow-indigo-500/25"
+            />
           </form>
-        )}
+        </Sheet>
 
         {/* Weekly Timetable Grid */}
         <div className="space-y-3">
@@ -377,7 +343,14 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
           {filteredClasses.length === 0 ? (
             <div className="text-center py-12 text-slate-500 text-xs border border-dashed border-white/10 rounded-3xl space-y-2">
               <Bell className="w-6 h-6 text-slate-600 mx-auto" />
-              <p>No class alarms for this filter. Tap + Add Class Alarm above to create one.</p>
+              <p>No class alarms for this day.</p>
+              <button
+                type="button"
+                onClick={() => setIsAdding(true)}
+                className="h-10 px-4 rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-xs font-bold"
+              >
+                Add an alarm
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -393,67 +366,50 @@ export const ClassReminderManager: React.FC<ClassReminderManagerProps> = ({
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => onToggleClass(cls.id)}
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
-                            cls.enabled
-                              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
-                              : 'bg-slate-800 text-slate-500'
-                          }`}
-                        >
-                          <Bell className="w-5 h-5" />
-                        </button>
-
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-white truncate flex items-center gap-2">
-                            <span>{cls.title}</span>
-                          </h4>
-                          {sub && (
-                            <span
-                              className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold mt-1"
-                              style={{
-                                backgroundColor: `${sub.color}20`,
-                                color: sub.color,
-                                border: `1px solid ${sub.color}40`,
-                              }}
-                            >
-                              {sub.name}
-                            </span>
-                          )}
-                        </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-white break-words">{cls.title}</h4>
+                        {sub && (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold mt-1.5"
+                            style={{
+                              backgroundColor: `${sub.color}20`,
+                              color: sub.color,
+                              border: `1px solid ${sub.color}40`,
+                            }}
+                          >
+                            {sub.name}
+                          </span>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          onClick={() => onToggleClass(cls.id)}
-                          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                            cls.enabled
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-slate-800 text-slate-400'
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={cls.enabled}
+                        aria-label={cls.enabled ? 'Turn alarm off' : 'Turn alarm on'}
+                        onClick={() => onToggleClass(cls.id)}
+                        className={`relative w-12 h-7 rounded-full shrink-0 transition-colors ${
+                          cls.enabled ? 'bg-indigo-500' : 'bg-slate-700'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                            cls.enabled ? 'translate-x-5' : ''
                           }`}
-                        >
-                          {cls.enabled ? 'ACTIVE' : 'OFF'}
-                        </button>
-                        <button
-                          onClick={() => onDeleteClass(cls.id)}
-                          title="Delete alarm"
-                          className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                        />
+                      </button>
                     </div>
 
-                    {/* Time & Days Row */}
-                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs">
-                      <div className="flex items-center gap-1.5 font-mono text-base font-extrabold text-white">
-                        <Clock className="w-4 h-4 text-indigo-400" />
-                        <span>{cls.time}</span>
+                    {/* Time & days, delete pinned bottom-right */}
+                    <div className="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-white/5">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 font-mono text-base font-extrabold text-white">
+                          <Clock className="w-4 h-4 text-indigo-400" />
+                          <span>{cls.time}</span>
+                        </div>
+                        <div className="text-[11px] font-medium text-slate-400 mt-0.5">{formatDays(cls.days)}</div>
                       </div>
-                      <div className="text-[11px] font-medium text-slate-400">
-                        {formatDays(cls.days)}
-                      </div>
+                      <ConfirmDelete onConfirm={() => onDeleteClass(cls.id)} label="Delete alarm" />
                     </div>
                   </div>
                 );

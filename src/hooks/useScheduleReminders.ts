@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ClassSchedule, Subject } from '../types';
 import { soundEngine } from '../utils/audio';
+import { localDateStr } from '../utils/date';
 
 interface UseScheduleRemindersProps {
   classes: ClassSchedule[];
@@ -23,7 +24,7 @@ export function useScheduleReminders({ classes, subjects }: UseScheduleReminders
       const currentHours = String(now.getHours()).padStart(2, '0');
       const currentMins = String(now.getMinutes()).padStart(2, '0');
       const currentTimeStr = `${currentHours}:${currentMins}`;
-      const datePrefix = now.toISOString().split('T')[0];
+      const datePrefix = localDateStr(now);
 
       // Clean up firedMap entries from previous days
       if (firedMap.current.size > 200) {

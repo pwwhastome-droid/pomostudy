@@ -38,7 +38,7 @@ export function usePictureInPicture({ containerId }: UsePictureInPictureProps) {
     try {
       const pipWindow = await window.documentPictureInPicture.requestWindow({
         width: 340,
-        height: 380,
+        height: 340,
       });
 
       pipWindowRef.current = pipWindow;
@@ -67,7 +67,7 @@ export function usePictureInPicture({ containerId }: UsePictureInPictureProps) {
       });
 
       // Match dark theme background
-      pipWindow.document.body.className = 'bg-[#030712] text-slate-100 flex items-center justify-center m-0 p-3 select-none overflow-hidden';
+      pipWindow.document.body.className = 'bg-[#030712] text-slate-100 flex items-center justify-center m-0 p-3 box-border w-screen h-screen select-none overflow-hidden';
 
       const targetEl = document.getElementById(containerId);
       if (targetEl) {
