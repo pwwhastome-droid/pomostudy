@@ -38,6 +38,10 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
+      - name: Resolve Kotlin Stdlib Duplicate Classes
+        run: |
+          sed -i '/dependencies {/a \    constraints {\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22") { because("kotlin-stdlib-jdk7 is now part of kotlin-stdlib") }\n        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22") { because("kotlin-stdlib-jdk8 is now part of kotlin-stdlib") }\n    }' android/app/build.gradle
+
       - name: Build Debug APK
         working-directory: android
         run: |
