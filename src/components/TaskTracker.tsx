@@ -12,6 +12,7 @@ interface TaskTrackerProps {
   onToggleComplete: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onIncrementPomo: (taskId: string) => void;
+  onOpenSchedule?: () => void;
 }
 
 export const TaskTracker: React.FC<TaskTrackerProps> = ({
@@ -23,6 +24,7 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
   onToggleComplete,
   onDeleteTask,
   onIncrementPomo,
+  onOpenSchedule,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [title, setTitle] = useState('');
@@ -62,13 +64,23 @@ export const TaskTracker: React.FC<TaskTrackerProps> = ({
           </h2>
         </div>
 
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-500/20 border border-rose-400/20 transition-all active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Task</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {onOpenSchedule && (
+            <button
+              onClick={onOpenSchedule}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-pill hover:bg-white/10 text-slate-300 text-xs font-bold transition active:scale-95"
+            >
+              <span>Class Alarms & Calendar</span>
+            </button>
+          )}
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-500/20 border border-rose-400/20 transition-all active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Task</span>
+          </button>
+        </div>
       </div>
 
       {/* Add Task Form */}

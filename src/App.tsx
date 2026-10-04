@@ -4,19 +4,24 @@ import { Timer } from './components/Timer';
 import { TaskTracker } from './components/TaskTracker';
 import { Analytics } from './components/Analytics';
 import { SubjectManager } from './components/SubjectManager';
+import { ExamCalendar } from './components/ExamCalendar';
+import { ClassReminderManager } from './components/ClassReminderManager';
 import { SettingsModal } from './components/SettingsModal';
 import { MiniTimer } from './components/MiniTimer';
 import { useTimer } from './hooks/useTimer';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useMediaSession } from './hooks/useMediaSession';
 import { usePictureInPicture } from './hooks/usePictureInPicture';
+import { useScheduleReminders } from './hooks/useScheduleReminders';
 import { storage } from './utils/storage';
-import { Settings, Subject, Task, SessionRecord, TimerMode } from './types';
+import { Settings, Subject, Task, SessionRecord, TimerMode, ClassSchedule, ExamEvent } from './types';
 import {
   Timer as TimerIcon,
   CheckSquare,
   BarChart3,
   BookOpen,
+  Calendar as CalendarIcon,
+  Bell,
   Settings as SettingsIcon,
   Minimize2,
   ExternalLink,
@@ -27,8 +32,11 @@ export const App: React.FC = () => {
   const [subjects, setSubjects] = useState<Subject[]>(() => storage.getSubjects());
   const [tasks, setTasks] = useState<Task[]>(() => storage.getTasks());
   const [sessions, setSessions] = useState<SessionRecord[]>(() => storage.getSessions());
+  const [classes, setClasses] = useState<ClassSchedule[]>(() => storage.getClasses());
+  const [exams, setExams] = useState<ExamEvent[]>(() => storage.getExams());
 
-  const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'analytics' | 'subjects'>('timer');
+  const [activeTab, setActiveTab] = useState<'timer' | 'tasks' | 'schedule' | 'analytics' | 'subjects'>('timer');
+  const [scheduleSubTab, setScheduleSubTab] = useState<'calendar' | 'alarms'>('calendar');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMiniMode, setIsMiniMode] = useState(false);
 
@@ -109,6 +117,9 @@ export const App: React.FC = () => {
     onSkip: timer.skip,
   });
 
+  // Background Class Reminder Engine
+  useScheduleReminders({ classes, subjects });
+
   // Document Picture-in-Picture for native floating window
   const pip = usePictureInPicture({ containerId: 'pip-timer-wrapper' });
 
@@ -173,6 +184,8 @@ export const App: React.FC = () => {
       setSubjects(storage.getSubjects());
       setTasks(storage.getTasks());
       setSessions(storage.getSessions());
+      setClasses(storage.getClasses());
+      setExams(storage.getExams());
       setIsSettingsOpen(false);
       alert('Data imported successfully!');
     } else {
@@ -239,6 +252,46 @@ export const App: React.FC = () => {
     }
   };
 
+  // Handlers for Classes
+  const handleAddClass = (clsData: Omit<ClassSchedule, 'id'>) => {
+    const newClass: ClassSchedule = {
+      ...clsData,
+      id: 'cls-' + Date.now(),
+    };
+    const updated = [...classes, newClass];
+    setClasses(updated);
+    storage.saveClasses(updated);
+  };
+
+  const handleToggleClass = (id: string) => {
+    const updated = classes.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c));
+    setClasses(updated);
+    storage.saveClasses(updated);
+  };
+
+  const handleDeleteClass = (id: string) => {
+    const updated = classes.filter((c) => c.id !== id);
+    setClasses(updated);
+    storage.saveClasses(updated);
+  };
+
+  // Handlers for Exams
+  const handleAddExam = (examData: Omit<ExamEvent, 'id'>) => {
+    const newExam: ExamEvent = {
+      ...examData,
+      id: 'exam-' + Date.now(),
+    };
+    const updated = [...exams, newExam];
+    setExams(updated);
+    storage.saveExams(updated);
+  };
+
+  const handleDeleteExam = (id: string) => {
+    const updated = exams.filter((e) => e.id !== id);
+    setExams(updated);
+    storage.saveExams(updated);
+  };
+
   return (
     <div className="min-h-screen bg-mesh-dark text-slate-100 flex flex-col justify-between relative selection:bg-rose-500/30 selection:text-rose-200">
       {/* Top Floating Glass Header */}
@@ -279,6 +332,15 @@ export const App: React.FC = () => {
             >
               <CheckSquare className="w-4 h-4" />
               <span>Tasks</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('schedule')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'schedule' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <CalendarIcon className="w-4 h-4" />
+              <span>Exams & Alarms</span>
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
@@ -397,7 +459,55 @@ export const App: React.FC = () => {
             onToggleComplete={handleToggleComplete}
             onDeleteTask={handleDeleteTask}
             onIncrementPomo={handleIncrementPomo}
+            onOpenSchedule={() => setActiveTab('schedule')}
           />
+        )}
+
+        {activeTab === 'schedule' && (
+          <div className="space-y-5">
+            {/* Sub-tab toggle */}
+            <div className="flex items-center p-1.5 glass-pill rounded-2xl w-fit border border-white/10 gap-1.5">
+              <button
+                onClick={() => setScheduleSubTab('calendar')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  scheduleSubTab === 'calendar'
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <CalendarIcon className="w-4 h-4" />
+                <span>Exam Calendar</span>
+              </button>
+              <button
+                onClick={() => setScheduleSubTab('alarms')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  scheduleSubTab === 'alarms'
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Bell className="w-4 h-4" />
+                <span>Class Alarms ({classes.filter((c) => c.enabled).length})</span>
+              </button>
+            </div>
+
+            {scheduleSubTab === 'calendar' ? (
+              <ExamCalendar
+                exams={exams}
+                subjects={subjects}
+                onAddExam={handleAddExam}
+                onDeleteExam={handleDeleteExam}
+              />
+            ) : (
+              <ClassReminderManager
+                classes={classes}
+                subjects={subjects}
+                onAddClass={handleAddClass}
+                onToggleClass={handleToggleClass}
+                onDeleteClass={handleDeleteClass}
+              />
+            )}
+          </div>
         )}
 
         {activeTab === 'analytics' && (
@@ -443,10 +553,10 @@ export const App: React.FC = () => {
       />
 
       {/* Mobile Floating Bottom Bar */}
-      <div className="sm:hidden fixed bottom-4 left-4 right-4 z-30 glass-panel rounded-3xl p-2 flex items-center justify-around border-white/10 shadow-2xl backdrop-blur-2xl">
+      <div className="sm:hidden fixed bottom-4 left-4 right-4 z-30 glass-panel rounded-3xl p-1.5 flex items-center justify-around border-white/10 shadow-2xl backdrop-blur-2xl">
         <button
           onClick={() => setActiveTab('timer')}
-          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
             activeTab === 'timer'
               ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
               : 'text-slate-400 hover:text-slate-200'
@@ -457,7 +567,7 @@ export const App: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
             activeTab === 'tasks'
               ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
               : 'text-slate-400 hover:text-slate-200'
@@ -467,8 +577,19 @@ export const App: React.FC = () => {
           <span className="text-[10px] tracking-wider font-semibold">Tasks</span>
         </button>
         <button
+          onClick={() => setActiveTab('schedule')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
+            activeTab === 'schedule'
+              ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <CalendarIcon className="w-5 h-5" />
+          <span className="text-[10px] tracking-wider font-semibold">Schedule</span>
+        </button>
+        <button
           onClick={() => setActiveTab('analytics')}
-          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
             activeTab === 'analytics'
               ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
               : 'text-slate-400 hover:text-slate-200'
@@ -479,7 +600,7 @@ export const App: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('subjects')}
-          className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-95 ${
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all duration-200 active:scale-95 ${
             activeTab === 'subjects'
               ? 'bg-rose-500/20 text-rose-300 font-extrabold shadow-md shadow-rose-500/10 border border-rose-500/30'
               : 'text-slate-400 hover:text-slate-200'

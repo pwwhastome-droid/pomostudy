@@ -7,6 +7,24 @@ export interface Subject {
   targetDailyMinutes: number;
 }
 
+export interface ClassSchedule {
+  id: string;
+  title: string;
+  subjectId?: string;
+  days: number[]; // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  time: string; // "HH:MM" e.g. "19:00"
+  enabled: boolean;
+}
+
+export interface ExamEvent {
+  id: string;
+  title: string;
+  subjectId?: string;
+  date: string; // "YYYY-MM-DD" e.g. "2026-10-14"
+  time?: string; // "HH:MM"
+  notes?: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -16,6 +34,7 @@ export interface Task {
   completed: boolean;
   createdAt: string;
   completedAt?: string;
+  dueDate?: string; // YYYY-MM-DD
 }
 
 export interface SessionRecord {
