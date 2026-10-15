@@ -1,10 +1,17 @@
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
+export interface SubjectNote {
+  id: string;
+  text: string;
+  createdAt: string; // ISO string
+}
+
 export interface Subject {
   id: string;
   name: string;
   color: string;
   targetDailyMinutes: number;
+  notes?: SubjectNote[];
 }
 
 export interface ClassSchedule {
@@ -26,7 +33,7 @@ export interface ExamEvent {
 }
 
 export interface SpacedReviewStep {
-  intervalDays: number; // 1, 3, 7, 14
+  intervalDays: number; // 1, 3, 6, 12
   scheduledDate: string; // "YYYY-MM-DD"
   completed: boolean;
   completedAt?: string;
@@ -38,7 +45,7 @@ export interface SpacedItem {
   subjectId?: string;
   studyDate: string; // "YYYY-MM-DD" original date studied
   notes?: string;
-  steps: SpacedReviewStep[]; // 1, 3, 7, 14 days
+  steps: SpacedReviewStep[]; // 1, 3, 6, 12 days
 }
 
 export interface Task {

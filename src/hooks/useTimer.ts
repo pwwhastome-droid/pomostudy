@@ -2,9 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { TimerMode, Settings } from '../types';
 import { soundEngine } from '../utils/audio';
 import { storage } from '../utils/storage';
+import { nativeTimer } from '../utils/nativeTimer';
 
 interface UseTimerProps {
   settings: Settings;
+  /** Shown in the notification while a focus session runs. */
+  subjectName?: string;
   /** completedAt is only passed when a session finished while the app was closed. */
   onSessionComplete: (mode: TimerMode, durationMinutes: number, completedAt?: string) => void;
 }
@@ -15,7 +18,7 @@ type FinishReason = 'complete' | 'skip' | 'late';
 // anything older is discarded (we can't know the user was really studying).
 const LATE_GRACE_MS = 60 * 60 * 1000;
 
-export function useTimer({ settings, onSessionComplete }: UseTimerProps) {
+export function useTimer({ settings, subjectName, onSessionComplete }: UseTimerProps) {
   const getDurationForMode = useCallback(
     (m: TimerMode) => {
       switch (m) {
@@ -87,11 +90,34 @@ export function useTimer({ settings, onSessionComplete }: UseTimerProps) {
     });
   }, [mode, isRunning, persistedTimeLeft, totalDuration, sessionCount]);
 
+  // Android: keep a live countdown in the notification bar (and a finish alert) while running,
+  // so leaving or losing the app doesn't lose the session.
+  useEffect(() => {
+    if (isRunning && endTimeRef.current) {
+      const isFocus = mode === 'focus';
+      const label = isFocus ? 'Focus' : mode === 'shortBreak' ? 'Short break' : 'Long break';
+      nativeTimer.start({
+        endTime: endTimeRef.current,
+        mode,
+        totalDuration,
+        sessionCount,
+        title: isFocus && subjectName ? `${label} · ${subjectName}` : label,
+        text: 'Tap to return to PomoStudy',
+        doneTitle: isFocus ? 'Focus session complete 🎉' : 'Break finished ⚡',
+        doneBody: isFocus ? 'Time for a break.' : 'Ready to study again?',
+      });
+    } else {
+      nativeTimer.stop();
+    }
+  }, [isRunning, mode, totalDuration, sessionCount, subjectName]);
+
   // Request native browser/system notifications
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
+    if (!('Notification' in window) || Notification.permission !== 'default') return;
+    const t = setTimeout(() => {
       Notification.requestPermission().catch(() => {});
-    }
+    }, 4000);
+    return () => clearTimeout(t);
   }, []);
 
   // Send interactive system notifications with actions

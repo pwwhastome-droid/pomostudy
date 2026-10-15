@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Target } from 'lucide-react';
+import { BookOpen, Target, StickyNote, ChevronRight } from 'lucide-react';
 import { Subject, SessionRecord } from '../types';
 import { AddAction, ConfirmDelete, PageHeader, Sheet, SheetActions } from './ui';
 
@@ -8,6 +8,8 @@ interface SubjectManagerProps {
   sessions: SessionRecord[];
   onAddSubject: (subject: Omit<Subject, 'id'>) => void;
   onDeleteSubject: (subjectId: string) => void;
+  onAddNote: (subjectId: string, text: string) => void;
+  onDeleteNote: (subjectId: string, noteId: string) => void;
 }
 
 const PRESET_COLORS = [
@@ -26,11 +28,29 @@ export const SubjectManager: React.FC<SubjectManagerProps> = ({
   sessions,
   onAddSubject,
   onDeleteSubject,
+  onAddNote,
+  onDeleteNote,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [targetDailyMinutes, setTargetDailyMinutes] = useState(60);
+  const [notesSubjectId, setNotesSubjectId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+
+  const notesSubject = subjects.find((s) => s.id === notesSubjectId) || null;
+
+  const handleAddNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notesSubject || !noteDraft.trim()) return;
+    onAddNote(notesSubject.id, noteDraft.trim());
+    setNoteDraft('');
+  };
+
+  const closeNotes = () => {
+    setNotesSubjectId(null);
+    setNoteDraft('');
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +101,12 @@ export const SubjectManager: React.FC<SubjectManagerProps> = ({
               key={sub.id}
               className="flex items-center justify-between gap-2 p-3.5 rounded-2xl bg-slate-900/40 border border-white/5 hover:border-white/10 transition-colors"
             >
-              <div className="flex items-center gap-3.5 min-w-0">
+              <button
+                type="button"
+                onClick={() => setNotesSubjectId(sub.id)}
+                aria-label={`Open notes for ${sub.name}`}
+                className="flex items-center gap-3.5 min-w-0 flex-1 text-left"
+              >
                 <span
                   className="w-3.5 h-3.5 rounded-full shrink-0"
                   style={{ backgroundColor: sub.color, boxShadow: `0 0 10px ${sub.color}88` }}
@@ -95,9 +120,15 @@ export const SubjectManager: React.FC<SubjectManagerProps> = ({
                       <Target className="w-3 h-3 text-slate-500" />
                       {sub.targetDailyMinutes}m/day
                     </span>
+                    <span aria-hidden>•</span>
+                    <span className="flex items-center gap-1">
+                      <StickyNote className="w-3 h-3 text-slate-500" />
+                      {(sub.notes?.length || 0)} {(sub.notes?.length || 0) === 1 ? 'note' : 'notes'}
+                    </span>
                   </div>
                 </div>
-              </div>
+                <ChevronRight className="w-4 h-4 text-slate-600 shrink-0 ml-auto" aria-hidden />
+              </button>
 
               {subjects.length > 1 && (
                 <ConfirmDelete onConfirm={() => onDeleteSubject(sub.id)} label="Delete subject" />
@@ -106,6 +137,67 @@ export const SubjectManager: React.FC<SubjectManagerProps> = ({
           );
         })}
       </div>
+
+      <Sheet
+        open={!!notesSubject}
+        title={notesSubject ? `${notesSubject.name} notes` : 'Notes'}
+        onClose={closeNotes}
+      >
+        {notesSubject && (
+          <div className="space-y-5">
+            <form onSubmit={handleAddNote} className="space-y-3">
+              <label htmlFor="note-text" className="sr-only">
+                New note
+              </label>
+              <textarea
+                id="note-text"
+                rows={4}
+                placeholder={`Write a note for ${notesSubject.name}…`}
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                className="w-full px-3.5 py-3 bg-slate-950/70 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 resize-none"
+              />
+              <button
+                type="submit"
+                disabled={!noteDraft.trim()}
+                className="w-full h-11 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white text-sm font-bold shadow-lg shadow-indigo-500/25 transition"
+              >
+                Add note
+              </button>
+            </form>
+
+            {(notesSubject.notes?.length || 0) === 0 ? (
+              <p className="text-center text-xs text-slate-500 py-4">
+                No notes yet. Anything you add here is saved and stays on this subject.
+              </p>
+            ) : (
+              <ul className="space-y-2.5">
+                {notesSubject.notes!.map((n) => (
+                  <li
+                    key={n.id}
+                    className="p-3.5 rounded-2xl bg-slate-950/50 border border-white/5"
+                  >
+                    <p className="text-sm text-slate-200 whitespace-pre-wrap break-words">{n.text}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {new Date(n.createdAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                      <ConfirmDelete
+                        label="Delete note"
+                        onConfirm={() => onDeleteNote(notesSubject.id, n.id)}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </Sheet>
 
       <Sheet open={isAdding} title="New subject" onClose={() => setIsAdding(false)}>
         <form onSubmit={handleSubmit} className="space-y-5">

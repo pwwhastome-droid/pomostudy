@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pomostudy-v2';
+const CACHE_NAME = 'pomostudy-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -33,6 +33,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
+        // Hashed build files are immutable: serve straight from cache, no extra network request
+        if (new URL(event.request.url).pathname.startsWith('/assets/')) return cachedResponse;
         // Fetch in background to update cache for next time
         fetch(event.request)
           .then((networkResponse) => {

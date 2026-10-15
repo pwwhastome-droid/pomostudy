@@ -74,7 +74,7 @@ export const SpacedRepetition: React.FC<SpacedRepetitionProps> = ({
             <div>
               <h2 className="text-lg sm:text-xl font-extrabold text-white">Spaced recall</h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Review each topic after 1, 3, 7 and 14 days.
+                Review each topic after 1, 3, 6 and 12 days.
               </p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export const SpacedRepetition: React.FC<SpacedRepetitionProps> = ({
 
           <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-xs text-amber-200 flex items-start gap-2">
             <TrendingUp className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-            <span>Reviews are scheduled for +1, +3, +7 and +14 days after the date studied.</span>
+            <span>Reviews are scheduled for +1, +3, +6 and +12 days after the date studied.</span>
           </div>
 
           <SheetActions
@@ -254,7 +254,7 @@ export const SpacedRepetition: React.FC<SpacedRepetitionProps> = ({
                   </div>
                 </div>
 
-                {/* The 4 Spaced Repetition Stage Badges (1d, 3d, 7d, 14d) */}
+                {/* The 4 Spaced Repetition Stage Badges (1d, 3d, 6d, 12d) */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                   {item.steps.map((step) => {
                     const isDue = !step.completed && step.scheduledDate <= todayStr;

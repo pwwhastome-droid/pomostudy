@@ -1,3 +1,4 @@
+import { localDateStr } from './date';
 import { Settings, Subject, Task, SessionRecord, ClassSchedule, ExamEvent, SpacedItem, PersistedTimer, TimerContext } from '../types';
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -18,11 +19,20 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const DEFAULT_SUBJECTS: Subject[] = [
+  { id: 'sub-bio', name: 'Biology', color: '#10b981', targetDailyMinutes: 60 },
+  // keeps the old Mathematics id so existing study history stays attached
   { id: 'sub-1', name: 'Mathematics', color: '#38bdf8', targetDailyMinutes: 60 },
-  { id: 'sub-2', name: 'Computer Science', color: '#a855f7', targetDailyMinutes: 90 },
-  { id: 'sub-3', name: 'Languages', color: '#10b981', targetDailyMinutes: 30 },
-  { id: 'sub-4', name: 'Reading', color: '#f59e0b', targetDailyMinutes: 45 },
+  { id: 'sub-chem', name: 'Chemistry', color: '#a855f7', targetDailyMinutes: 60 },
+  { id: 'sub-phys', name: 'Physics', color: '#f59e0b', targetDailyMinutes: 60 },
+  { id: 'sub-geo', name: 'Geology', color: '#f97316', targetDailyMinutes: 45 },
 ];
+
+// The previous built-in list. If a device still has exactly these saved, swap in the new list once.
+const OLD_DEFAULT_NAMES = ['Mathematics', 'Computer Science', 'Languages', 'Reading'];
+
+// Review schedule (days after studying)
+export const SPACED_INTERVALS = [1, 3, 6, 12];
+const OLD_TO_NEW_INTERVAL: Record<number, number> = { 7: 6, 14: 12 };
 
 const KEYS = {
   SETTINGS: 'pomostudy_settings',
@@ -53,7 +63,16 @@ export const storage = {
   getSubjects(): Subject[] {
     try {
       const data = localStorage.getItem(KEYS.SUBJECTS);
-      return data ? JSON.parse(data) : DEFAULT_SUBJECTS;
+      if (!data) return DEFAULT_SUBJECTS;
+      const parsed: Subject[] = JSON.parse(data);
+      const isOldDefaults =
+        parsed.length === OLD_DEFAULT_NAMES.length &&
+        parsed.every((s, i) => s.name === OLD_DEFAULT_NAMES[i] && !s.notes?.length);
+      if (isOldDefaults) {
+        localStorage.setItem(KEYS.SUBJECTS, JSON.stringify(DEFAULT_SUBJECTS));
+        return DEFAULT_SUBJECTS;
+      }
+      return parsed;
     } catch {
       return DEFAULT_SUBJECTS;
     }
@@ -118,7 +137,23 @@ export const storage = {
   getSpacedItems(): SpacedItem[] {
     try {
       const data = localStorage.getItem(KEYS.SPACED_ITEMS);
-      return data ? JSON.parse(data) : [];
+      if (!data) return [];
+      const items: SpacedItem[] = JSON.parse(data);
+      // One-time move from the old 1/3/7/14 schedule to 1/3/6/12 (keeps completed reviews)
+      let changed = false;
+      const migrated = items.map((item) => ({
+        ...item,
+        steps: item.steps.map((st) => {
+          const next = OLD_TO_NEW_INTERVAL[st.intervalDays];
+          if (!next) return st;
+          changed = true;
+          const d = new Date(item.studyDate + 'T00:00:00');
+          d.setDate(d.getDate() + next);
+          return { ...st, intervalDays: next, scheduledDate: localDateStr(d) };
+        }),
+      }));
+      if (changed) localStorage.setItem(KEYS.SPACED_ITEMS, JSON.stringify(migrated));
+      return migrated;
     } catch {
       return [];
     }

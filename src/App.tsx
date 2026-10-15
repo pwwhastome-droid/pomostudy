@@ -1,20 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import confetti from 'canvas-confetti';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Timer } from './components/Timer';
-import { TaskTracker } from './components/TaskTracker';
-import { Analytics } from './components/Analytics';
-import { SubjectManager } from './components/SubjectManager';
-import { ExamCalendar } from './components/ExamCalendar';
-import { ClassReminderManager } from './components/ClassReminderManager';
-import { SpacedRepetition } from './components/SpacedRepetition';
-import { SettingsModal } from './components/SettingsModal';
 import { MiniTimer } from './components/MiniTimer';
 import { useTimer } from './hooks/useTimer';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useMediaSession } from './hooks/useMediaSession';
 import { usePictureInPicture } from './hooks/usePictureInPicture';
 import { useScheduleReminders } from './hooks/useScheduleReminders';
-import { storage } from './utils/storage';
+import { storage, SPACED_INTERVALS } from './utils/storage';
 import { localDateStr } from './utils/date';
 import { Settings, Subject, Task, SessionRecord, TimerMode, ClassSchedule, ExamEvent, SpacedItem } from './types';
 import {
@@ -30,6 +22,16 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
+// Only the Timer tab is needed to show the first screen; everything else loads on demand.
+const TaskTracker = lazy(() => import('./components/TaskTracker').then((m) => ({ default: m.TaskTracker })));
+const Analytics = lazy(() => import('./components/Analytics').then((m) => ({ default: m.Analytics })));
+const SubjectManager = lazy(() => import('./components/SubjectManager').then((m) => ({ default: m.SubjectManager })));
+const ExamCalendar = lazy(() => import('./components/ExamCalendar').then((m) => ({ default: m.ExamCalendar })));
+const ClassReminderManager = lazy(() =>
+  import('./components/ClassReminderManager').then((m) => ({ default: m.ClassReminderManager }))
+);
+const SpacedRepetition = lazy(() => import('./components/SpacedRepetition').then((m) => ({ default: m.SpacedRepetition })));
+const SettingsModal = lazy(() => import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal })));
 
 type TabId = 'timer' | 'tasks' | 'schedule' | 'spaced' | 'analytics' | 'subjects';
 
@@ -74,12 +76,16 @@ export const App: React.FC = () => {
 
   // Trigger celebration confetti
   const triggerConfetti = () => {
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#a855f7'],
-    });
+    import('canvas-confetti')
+      .then(({ default: confetti }) =>
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#a855f7'],
+        })
+      )
+      .catch(() => {});
   };
 
   // On session completion handler
@@ -128,6 +134,7 @@ export const App: React.FC = () => {
 
   const timer = useTimer({
     settings,
+    subjectName: selectedSubject?.name,
     onSessionComplete: handleSessionComplete,
   });
 
@@ -272,6 +279,23 @@ export const App: React.FC = () => {
     if (!selectedSubject) setSelectedSubject(newSubject);
   };
 
+  const handleAddSubjectNote = (subjectId: string, text: string) => {
+    const note = { id: 'note-' + Date.now(), text, createdAt: new Date().toISOString() };
+    const updated = subjects.map((s) =>
+      s.id === subjectId ? { ...s, notes: [note, ...(s.notes || [])] } : s
+    );
+    setSubjects(updated);
+    storage.saveSubjects(updated);
+  };
+
+  const handleDeleteSubjectNote = (subjectId: string, noteId: string) => {
+    const updated = subjects.map((s) =>
+      s.id === subjectId ? { ...s, notes: (s.notes || []).filter((n) => n.id !== noteId) } : s
+    );
+    setSubjects(updated);
+    storage.saveSubjects(updated);
+  };
+
   const handleDeleteSubject = (subjectId: string) => {
     if (subjects.length <= 1) return;
     const updated = subjects.filter((s) => s.id !== subjectId);
@@ -322,10 +346,10 @@ export const App: React.FC = () => {
     storage.saveExams(updated);
   };
 
-  // Handlers for Spaced Repetition (1, 3, 7, 14 days)
+  // Handlers for Spaced Repetition (1, 3, 6, 12 days)
   const handleAddSpacedItem = (title: string, subjectId?: string, studyDateStr?: string, notes?: string) => {
     const baseDate = studyDateStr ? new Date(studyDateStr + 'T00:00:00') : new Date();
-    const intervals = [1, 3, 7, 14];
+    const intervals = SPACED_INTERVALS;
 
     const steps = intervals.map((interval) => {
       const scheduled = new Date(baseDate);
@@ -486,6 +510,7 @@ export const App: React.FC = () => {
 
       {/* Main Responsive Canvas */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 pb-40 sm:pb-12 flex flex-col justify-center">
+        <Suspense fallback={<div className="h-40" aria-busy="true" />}>
         {activeTab === 'timer' && (
           <div className="space-y-6">
             <div id="pip-original-host">
@@ -621,8 +646,11 @@ export const App: React.FC = () => {
             sessions={sessions}
             onAddSubject={handleAddSubject}
             onDeleteSubject={handleDeleteSubject}
+            onAddNote={handleAddSubjectNote}
+            onDeleteNote={handleDeleteSubjectNote}
           />
         )}
+        </Suspense>
       </main>
 
       {/* Floating Mini Timer when enabled */}
@@ -641,6 +669,8 @@ export const App: React.FC = () => {
       )}
 
       {/* Settings Modal */}
+      {isSettingsOpen && (
+      <Suspense fallback={null}>
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -652,6 +682,8 @@ export const App: React.FC = () => {
         onExportData={handleExportData}
         onImportData={handleImportData}
       />
+      </Suspense>
+      )}
 
       {/* Mobile bottom tab bar — 5 equal, full-height touch targets */}
       <nav
