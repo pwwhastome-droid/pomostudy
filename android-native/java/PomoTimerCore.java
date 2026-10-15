@@ -177,17 +177,25 @@ final class PomoTimerCore {
         String title = p.getString("title", "PomoStudy");
         String mode = p.getString("mode", "focus");
         boolean isFocus = "focus".equals(mode);
+        boolean paused = "paused".equals(p.getString("status", "idle"));
 
-        // Mode badge
-        if (isFocus) {
+        // Mode & Status badge
+        if (paused) {
+            rv.setTextViewText(R.id.pomo_badge, "PAUSED");
+            rv.setInt(R.id.pomo_badge, "setBackgroundResource", R.drawable.pomo_badge_paused);
+            rv.setTextColor(R.id.pomo_badge, 0xFFF59E0B); // Amber
+        } else if (isFocus) {
             rv.setTextViewText(R.id.pomo_badge, "FOCUS");
             rv.setInt(R.id.pomo_badge, "setBackgroundResource", R.drawable.pomo_badge_focus);
-            rv.setTextColor(R.id.pomo_badge, 0xFFF43F5E);
+            rv.setTextColor(R.id.pomo_badge, 0xFFF43F5E); // Rose
         } else {
             rv.setTextViewText(R.id.pomo_badge, "BREAK");
             rv.setInt(R.id.pomo_badge, "setBackgroundResource", R.drawable.pomo_badge_break);
-            rv.setTextColor(R.id.pomo_badge, 0xFF10B981);
+            rv.setTextColor(R.id.pomo_badge, 0xFF10B981); // Emerald
         }
+
+        // Title stays constant so pausing never jumps text layout
+        rv.setTextViewText(R.id.pomo_title, title);
 
         if (running) {
             long endTime = p.getLong("endTime", 0);
@@ -196,19 +204,21 @@ final class PomoTimerCore {
             rv.setViewVisibility(R.id.pomo_paused_time, View.GONE);
             rv.setChronometer(R.id.pomo_chrono, base, null, true);
             if (Build.VERSION.SDK_INT >= 24) rv.setChronometerCountDown(R.id.pomo_chrono, true);
-            rv.setTextViewText(R.id.pomo_title, title);
 
-            rv.setTextViewText(R.id.pomo_btn_toggle, isBig ? "⏸  Pause" : "⏸ Pause");
+            rv.setTextViewText(R.id.pomo_btn_toggle, "⏸  Pause");
             rv.setInt(R.id.pomo_btn_toggle, "setBackgroundResource", R.drawable.pomo_btn_pause);
             rv.setTextColor(R.id.pomo_btn_toggle, 0xFFFFFFFF);
         } else {
             int s = p.getInt("remainingSec", 0);
+            String timeStr = (s >= 3600)
+                ? String.format(Locale.US, "%d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
+                : String.format(Locale.US, "%02d:%02d", s / 60, s % 60);
+
             rv.setViewVisibility(R.id.pomo_chrono, View.GONE);
             rv.setViewVisibility(R.id.pomo_paused_time, View.VISIBLE);
-            rv.setTextViewText(R.id.pomo_paused_time, String.format(Locale.US, "%02d:%02d", s / 60, s % 60));
-            rv.setTextViewText(R.id.pomo_title, title + " · Paused");
+            rv.setTextViewText(R.id.pomo_paused_time, timeStr);
 
-            rv.setTextViewText(R.id.pomo_btn_toggle, isBig ? "▶  Resume" : "▶ Resume");
+            rv.setTextViewText(R.id.pomo_btn_toggle, "▶  Resume");
             rv.setInt(R.id.pomo_btn_toggle, "setBackgroundResource", R.drawable.pomo_btn_resume);
             rv.setTextColor(R.id.pomo_btn_toggle, 0xFFFFFFFF);
         }
