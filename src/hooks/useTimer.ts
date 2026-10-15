@@ -93,9 +93,14 @@ export function useTimer({ settings, subjectName, onSessionComplete }: UseTimerP
   // ---- Android notification (live countdown + Pause/Skip/Reset buttons) ------------------------
   // Tell the native side what the timer is doing, so it can keep showing and controlling it
   // while the app is in the background or closed.
+  const [hasActiveNotification, setHasActiveNotification] = useState(false);
   const timeLeftRef = useRef(timeLeft);
   timeLeftRef.current = timeLeft;
-  const isPausedMidSession = !isRunning && timeLeft > 0 && timeLeft < totalDuration;
+  const isPausedMidSession = !isRunning && (hasActiveNotification || timeLeft < totalDuration) && timeLeft > 0;
+
+  useEffect(() => {
+    if (isRunning) setHasActiveNotification(true);
+  }, [isRunning]);
 
   useEffect(() => {
     const isFocus = mode === 'focus';
@@ -105,7 +110,7 @@ export function useTimer({ settings, subjectName, onSessionComplete }: UseTimerP
       mode,
       totalDuration,
       sessionCount,
-      title: isFocus && subjectName ? `${label} · ${subjectName}` : label,
+      title: subjectName ? subjectName : label,
       doneTitle: isFocus ? 'Focus session complete 🎉' : 'Break finished ⚡',
       doneBody: isFocus ? 'Time for a break.' : 'Ready to study again?',
       skipMode,
@@ -125,6 +130,7 @@ export function useTimer({ settings, subjectName, onSessionComplete }: UseTimerP
   const adoptNative = useCallback((s: NativeTimerSync) => {
     setMode(s.mode);
     setTotalDuration(s.totalDuration);
+    setHasActiveNotification(true);
     if (s.status === 'running' && s.endTime) {
       endTimeRef.current = s.endTime;
       setTimeLeft(Math.max(0, Math.ceil((s.endTime - Date.now()) / 1000)));
@@ -251,6 +257,9 @@ export function useTimer({ settings, subjectName, onSessionComplete }: UseTimerP
     (reason: FinishReason, completedAt?: Date) => {
       setIsRunning(false);
       endTimeRef.current = null;
+      if (reason === 'complete') {
+        setHasActiveNotification(false);
+      }
 
       const counted = reason !== 'skip';
 

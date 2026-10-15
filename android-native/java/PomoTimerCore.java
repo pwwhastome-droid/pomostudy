@@ -107,7 +107,7 @@ final class PomoTimerCore {
                 e.putString("mode", nextMode);
                 e.putInt("totalDuration", nextDur);
             }
-            e.putString("status", "idle");
+            e.putString("status", "paused");
             e.putInt("remainingSec", nextDur > 0 ? nextDur : p.getInt("totalDuration", 0));
             e.putLong("endTime", 0);
             e.putBoolean("dirty", true);
@@ -115,7 +115,7 @@ final class PomoTimerCore {
             cancelAlarm(ctx);
         } else if (ACTION_RESET.equals(action)) {
             if ("idle".equals(status)) return;
-            e.putString("status", "idle");
+            e.putString("status", "paused");
             e.putInt("remainingSec", p.getInt("totalDuration", 0));
             e.putLong("endTime", 0);
             e.putBoolean("dirty", true);
@@ -205,7 +205,7 @@ final class PomoTimerCore {
             rv.setChronometer(R.id.pomo_chrono, base, null, true);
             if (Build.VERSION.SDK_INT >= 24) rv.setChronometerCountDown(R.id.pomo_chrono, true);
 
-            rv.setTextViewText(R.id.pomo_btn_toggle, "⏸  Pause");
+            rv.setTextViewText(R.id.pomo_btn_toggle, "Pause");
             rv.setInt(R.id.pomo_btn_toggle, "setBackgroundResource", R.drawable.pomo_btn_pause);
             rv.setTextColor(R.id.pomo_btn_toggle, 0xFFFFFFFF);
         } else {
@@ -218,10 +218,13 @@ final class PomoTimerCore {
             rv.setViewVisibility(R.id.pomo_paused_time, View.VISIBLE);
             rv.setTextViewText(R.id.pomo_paused_time, timeStr);
 
-            rv.setTextViewText(R.id.pomo_btn_toggle, "▶  Resume");
+            rv.setTextViewText(R.id.pomo_btn_toggle, "Resume");
             rv.setInt(R.id.pomo_btn_toggle, "setBackgroundResource", R.drawable.pomo_btn_resume);
             rv.setTextColor(R.id.pomo_btn_toggle, 0xFFFFFFFF);
         }
+
+        rv.setTextViewText(R.id.pomo_btn_skip, "Skip");
+        rv.setTextViewText(R.id.pomo_btn_reset, "Reset");
 
         rv.setOnClickPendingIntent(R.id.pomo_btn_toggle, actionIntent(ctx, ACTION_TOGGLE, 11));
         rv.setOnClickPendingIntent(R.id.pomo_btn_skip, actionIntent(ctx, ACTION_SKIP, 12));
