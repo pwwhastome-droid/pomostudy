@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { TimerMode, Settings } from '../types';
 import { soundEngine } from '../utils/audio';
 import { storage } from '../utils/storage';
-import { nativeTimer } from '../utils/nativeTimer';
+import { nativeTimer, type NativeTimerSync } from '../utils/nativeTimer';
 
 interface UseTimerProps {
   settings: Settings;
@@ -90,26 +90,74 @@ export function useTimer({ settings, subjectName, onSessionComplete }: UseTimerP
     });
   }, [mode, isRunning, persistedTimeLeft, totalDuration, sessionCount]);
 
-  // Android: keep a live countdown in the notification bar (and a finish alert) while running,
-  // so leaving or losing the app doesn't lose the session.
+  // ---- Android notification (live countdown + Pause/Skip/Reset buttons) ------------------------
+  // Tell the native side what the timer is doing, so it can keep showing and controlling it
+  // while the app is in the background or closed.
+  const timeLeftRef = useRef(timeLeft);
+  timeLeftRef.current = timeLeft;
+  const isPausedMidSession = !isRunning && timeLeft > 0 && timeLeft < totalDuration;
+
   useEffect(() => {
+    const isFocus = mode === 'focus';
+    const label = isFocus ? 'Focus' : mode === 'shortBreak' ? 'Short break' : 'Long break';
+    const skipMode: TimerMode = isFocus ? 'shortBreak' : 'focus'; // same result as the in-app skip
+    const base = {
+      mode,
+      totalDuration,
+      sessionCount,
+      title: isFocus && subjectName ? `${label} · ${subjectName}` : label,
+      doneTitle: isFocus ? 'Focus session complete 🎉' : 'Break finished ⚡',
+      doneBody: isFocus ? 'Time for a break.' : 'Ready to study again?',
+      skipMode,
+      skipDuration: getDurationForMode(skipMode),
+    };
+
     if (isRunning && endTimeRef.current) {
-      const isFocus = mode === 'focus';
-      const label = isFocus ? 'Focus' : mode === 'shortBreak' ? 'Short break' : 'Long break';
-      nativeTimer.start({
-        endTime: endTimeRef.current,
-        mode,
-        totalDuration,
-        sessionCount,
-        title: isFocus && subjectName ? `${label} · ${subjectName}` : label,
-        text: 'Tap to return to PomoStudy',
-        doneTitle: isFocus ? 'Focus session complete 🎉' : 'Break finished ⚡',
-        doneBody: isFocus ? 'Time for a break.' : 'Ready to study again?',
-      });
+      nativeTimer.start({ ...base, endTime: endTimeRef.current });
+    } else if (isPausedMidSession) {
+      nativeTimer.pause({ ...base, remainingSec: timeLeftRef.current });
     } else {
       nativeTimer.stop();
     }
-  }, [isRunning, mode, totalDuration, sessionCount, subjectName]);
+  }, [isRunning, isPausedMidSession, mode, totalDuration, sessionCount, subjectName, getDurationForMode]);
+
+  // Pick up changes made with the notification buttons (pause / resume / skip / reset)
+  const adoptNative = useCallback((s: NativeTimerSync) => {
+    setMode(s.mode);
+    setTotalDuration(s.totalDuration);
+    if (s.status === 'running' && s.endTime) {
+      endTimeRef.current = s.endTime;
+      setTimeLeft(Math.max(0, Math.ceil((s.endTime - Date.now()) / 1000)));
+      setIsRunning(true);
+    } else if (s.status === 'paused') {
+      endTimeRef.current = null;
+      setIsRunning(false);
+      setTimeLeft(s.remainingSec);
+    } else {
+      // reset or skipped: idle at the full length of the (new) phase
+      endTimeRef.current = null;
+      setIsRunning(false);
+      setTimeLeft(s.totalDuration);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const s = await nativeTimer.sync();
+      if (!cancelled && s?.dirty) adoptNative(s);
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    const off = nativeTimer.onChanged(check);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      off();
+    };
+  }, [adoptNative]);
 
   // Request native browser/system notifications
   useEffect(() => {

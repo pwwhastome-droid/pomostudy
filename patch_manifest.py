@@ -14,11 +14,12 @@ add = "".join(
 if add:
     s = s.replace("</manifest>", add + "</manifest>")
 
-if "TimerAlarmReceiver" not in s:
-    s = s.replace(
-        "</application>",
-        '        <receiver android:name=".TimerAlarmReceiver" android:exported="false" />\n    </application>',
-    )
+receivers = ""
+for name in ("TimerAlarmReceiver", "TimerActionReceiver"):
+    if name not in s:
+        receivers += f'        <receiver android:name=".{name}" android:exported="false" />\n'
+if receivers:
+    s = s.replace("</application>", receivers + "    </application>")
 
 with open(path, "w") as f:
     f.write(s)

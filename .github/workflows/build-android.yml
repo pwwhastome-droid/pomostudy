@@ -38,14 +38,15 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
-      - name: Inject Native Timer (notification countdown + alarm)
+      - name: Inject Native Timer (notification with controls + alarm)
         run: |
           PKG_DIR=android/app/src/main/java/com/pomostudy/app
           mkdir -p "$PKG_DIR"
           rm -f "$PKG_DIR"/MainActivity.kt
           cp android-native/java/*.java "$PKG_DIR/"
-          mkdir -p android/app/src/main/res/drawable
+          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/layout
           cp android-native/res/drawable/*.xml android/app/src/main/res/drawable/
+          cp android-native/res/layout/*.xml android/app/src/main/res/layout/
           python3 patch_manifest.py
 
       - name: Inject Custom Android Launcher Icons

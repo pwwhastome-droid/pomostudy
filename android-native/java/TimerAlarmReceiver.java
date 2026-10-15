@@ -10,10 +10,10 @@ public class TimerAlarmReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String title = intent.getStringExtra("title");
         String body = intent.getStringExtra("body");
-        PomoTimerPlugin.postDone(
+        PomoTimerCore.postDone(
             context,
-            title != null ? title : "Session complete",
-            body != null ? body : "Open PomoStudy to continue."
+            title != null && !title.isEmpty() ? title : "Session complete",
+            body != null && !body.isEmpty() ? body : "Open PomoStudy to continue."
         );
     }
 }
