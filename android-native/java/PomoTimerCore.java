@@ -153,12 +153,16 @@ final class PomoTimerCore {
         }
         ensureChannels(ctx);
 
+        String mode = p.getString("mode", "focus");
+        boolean isFocus = "focus".equals(mode);
         String title = p.getString("title", "PomoStudy");
+
         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CH_TIMER)
             .setSmallIcon(smallIcon(ctx))
+            .setColor(isFocus ? 0xFFF43F5E : 0xFF10B981)
             .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(buildViews(ctx, p, running))
-            .setCustomBigContentView(buildViews(ctx, p, running))
+            .setCustomContentView(buildViews(ctx, p, running, R.layout.pomo_notification, false))
+            .setCustomBigContentView(buildViews(ctx, p, running, R.layout.pomo_notification_big, true))
             .setContentTitle(title)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -168,9 +172,22 @@ final class PomoTimerCore {
         nm(ctx).notify(ID_TIMER, b.build());
     }
 
-    private static RemoteViews buildViews(Context ctx, SharedPreferences p, boolean running) {
-        RemoteViews rv = new RemoteViews(ctx.getPackageName(), R.layout.pomo_notification);
+    private static RemoteViews buildViews(Context ctx, SharedPreferences p, boolean running, int layoutId, boolean isBig) {
+        RemoteViews rv = new RemoteViews(ctx.getPackageName(), layoutId);
         String title = p.getString("title", "PomoStudy");
+        String mode = p.getString("mode", "focus");
+        boolean isFocus = "focus".equals(mode);
+
+        // Mode badge
+        if (isFocus) {
+            rv.setTextViewText(R.id.pomo_badge, "FOCUS");
+            rv.setInt(R.id.pomo_badge, "setBackgroundResource", R.drawable.pomo_badge_focus);
+            rv.setTextColor(R.id.pomo_badge, 0xFFF43F5E);
+        } else {
+            rv.setTextViewText(R.id.pomo_badge, "BREAK");
+            rv.setInt(R.id.pomo_badge, "setBackgroundResource", R.drawable.pomo_badge_break);
+            rv.setTextColor(R.id.pomo_badge, 0xFF10B981);
+        }
 
         if (running) {
             long endTime = p.getLong("endTime", 0);
@@ -180,14 +197,20 @@ final class PomoTimerCore {
             rv.setChronometer(R.id.pomo_chrono, base, null, true);
             if (Build.VERSION.SDK_INT >= 24) rv.setChronometerCountDown(R.id.pomo_chrono, true);
             rv.setTextViewText(R.id.pomo_title, title);
-            rv.setTextViewText(R.id.pomo_btn_toggle, "Pause");
+
+            rv.setTextViewText(R.id.pomo_btn_toggle, isBig ? "⏸  Pause" : "⏸ Pause");
+            rv.setInt(R.id.pomo_btn_toggle, "setBackgroundResource", R.drawable.pomo_btn_pause);
+            rv.setTextColor(R.id.pomo_btn_toggle, 0xFFFFFFFF);
         } else {
             int s = p.getInt("remainingSec", 0);
             rv.setViewVisibility(R.id.pomo_chrono, View.GONE);
             rv.setViewVisibility(R.id.pomo_paused_time, View.VISIBLE);
             rv.setTextViewText(R.id.pomo_paused_time, String.format(Locale.US, "%02d:%02d", s / 60, s % 60));
             rv.setTextViewText(R.id.pomo_title, title + " · Paused");
-            rv.setTextViewText(R.id.pomo_btn_toggle, "Resume");
+
+            rv.setTextViewText(R.id.pomo_btn_toggle, isBig ? "▶  Resume" : "▶ Resume");
+            rv.setInt(R.id.pomo_btn_toggle, "setBackgroundResource", R.drawable.pomo_btn_resume);
+            rv.setTextColor(R.id.pomo_btn_toggle, 0xFFFFFFFF);
         }
 
         rv.setOnClickPendingIntent(R.id.pomo_btn_toggle, actionIntent(ctx, ACTION_TOGGLE, 11));
